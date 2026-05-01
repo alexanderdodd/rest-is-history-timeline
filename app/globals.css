@@ -242,3 +242,28 @@ body {
   max-width: 1280px;
   margin: 0 auto;
 }
+
+/* Force every internal react-chrono wrapper to lay out at its natural
+   height with no scroll container. `scrollable={false}` only disables the
+   library's programmatic scrolling — it leaves overflow:auto + a fixed
+   height on internal wrappers, which traps wheel events whenever the
+   cursor is over the timeline. Override aggressively so the document
+   scrolls instead. */
+.timeline-shell,
+.timeline-shell > div,
+.timeline-shell > div > div,
+.timeline-shell [class*="TimelineMainWrapper"],
+.timeline-shell [class*="OuterCardSection"],
+.timeline-shell [class*="OuterCardWrapper"],
+.timeline-shell [class*="VerticalCircleWrapper"],
+.timeline-shell [class*="TimelineContentRender"],
+.timeline-shell [class*="TimelineToolbarWrapper"] {
+  overflow: visible !important;
+  max-height: none !important;
+}
+/* These specific wrappers are the ones react-chrono sets a fixed height
+   on; without auto-height the cards above stay clipped. */
+.timeline-shell > div,
+.timeline-shell [class*="TimelineMainWrapper"] {
+  height: auto !important;
+}
