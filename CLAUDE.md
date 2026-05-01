@@ -55,9 +55,13 @@ The `next-env.d.ts` and `tsconfig.json` files are partially managed by `next bui
 
 ## Standing rules
 
-### Always commit and push
+### Commit and push after every logical change — do NOT batch
 
-After completing a coherent unit of work — feature added, bug fixed, refactor done — **commit it and push to `origin/main`** as part of "done." Do not wait to be asked. The user is iterating fast and intends Vercel to watch the repo. Group changes into one logically coherent commit per turn, not micro-commits or one giant blob. Same git safety rules as ever (no `--force`, no `--no-verify`, don't commit secrets, no `git add -A` blindly).
+After **each** coherent change — a single feature, a single bug fix, a single refactor — commit it and push to `origin/main` immediately. Do **not** roll multiple unrelated changes into one commit, even if they happen in the same turn. If a turn includes three distinct fixes, that's three commits + three pushes. The user has explicitly requested this granularity; the previous "one commit per turn" rule was wrong and is replaced by this one.
+
+- Push immediately after each commit (Vercel watches the repo).
+- Commit messages follow the existing repo style (subject under 72 chars, body explains the *why*).
+- Same git safety rules: no `--force`, no `--no-verify`, don't commit secrets, no `git add -A` blindly.
 
 ### Feature documentation convention (HARD RULE)
 
