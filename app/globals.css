@@ -1,0 +1,117 @@
+:root {
+  color-scheme: dark;
+
+  --bg: #0c0d12;
+  --bg-elev: #14161e;
+  --bg-elev-2: #1b1e29;
+  --border: #262a36;
+  --border-strong: #353a4a;
+  --text: #e7eaf3;
+  --text-dim: #9aa0b3;
+  --text-faint: #6b7185;
+  --accent: #d4a85a;
+  --accent-soft: rgba(212, 168, 90, 0.18);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+body {
+  background:
+    radial-gradient(1400px 900px at 20% -10%, rgba(212, 168, 90, 0.06), transparent 60%),
+    radial-gradient(1100px 700px at 110% 110%, rgba(106, 111, 179, 0.07), transparent 60%),
+    var(--bg);
+}
+
+.page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.timeline-shell {
+  flex: 1;
+  width: 100%;
+  min-height: 100vh;
+  padding: 2rem 0;
+}
+
+/* ── react-chrono overrides ────────────────────────────────────────── */
+
+/* Card styling. */
+.rh-card,
+.timeline-shell [class*="TimelineContentDetailsWrapper"],
+.timeline-shell [class*="TimelineCardContent"] {
+  background: var(--bg-elev) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 24px 60px -32px rgba(0, 0, 0, 0.7) !important;
+}
+
+.rh-card-title {
+  font-family: "Fraunces", "Inter", serif !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.005em !important;
+}
+
+.rh-card-subtitle {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600 !important;
+  color: var(--accent) !important;
+}
+
+.rh-card-text {
+  line-height: 1.55 !important;
+  color: var(--text) !important;
+}
+
+/* Date "title" rendered next to the spine — make it tabular and clear. */
+.rh-title,
+.timeline-shell [class*="TimelineItemTitle"] {
+  font-variant-numeric: tabular-nums !important;
+  font-weight: 600 !important;
+}
+
+/* The vertical spine. */
+.timeline-shell [class*="TimelineMainWrapper"]::before,
+.timeline-shell [class*="VerticalCircleWrapper"]::before {
+  background: linear-gradient(to bottom, var(--border-strong), var(--border)) !important;
+}
+
+/* Hide the read-more chevron noise — use minimal text affordance. */
+.timeline-shell [class*="ChevronIconWrapper"] {
+  background: transparent !important;
+}
+
+/* Read-more / read-less link. */
+.timeline-shell [class*="ShowMore"] {
+  color: var(--accent) !important;
+}
+
+/* Outline / control buttons. */
+.rh-controls,
+.timeline-shell [class*="ControlsWrapper"] {
+  background: var(--bg-elev) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 999px !important;
+}
+
+/* Keep the timeline contents centred and cap the width on big screens. */
+.timeline-shell > div {
+  max-width: 1280px;
+  margin: 0 auto;
+}
