@@ -16,7 +16,7 @@ import type {
 } from "./types";
 import type { YouTubeVideo } from "./youtube";
 
-export const CLASSIFIER_VERSION = "2026-05-01.v5";
+export const CLASSIFIER_VERSION = "2026-05-01.v6";
 export const CLASSIFIER_MODEL = "anthropic/claude-haiku-4.5";
 
 const SYSTEM_PROMPT = `You categorise episodes of "The Rest Is History" podcast by the historical period(s) they discuss and identify multi-part series membership.
@@ -35,9 +35,15 @@ COVERS — temporal scope of THIS episode:
 - For a single-topic episode, use a tight range. For an episode that bounces across centuries, use multiple ranges.
 - "startMonth"/"startDay"/"endMonth"/"endDay" are OPTIONAL and 1-indexed. Include them when the episode is about a SPECIFIC dated event (e.g. "Storming of the Bastille" → 1789-07-14; "Assassination of Caesar" → -44-03-15). Omit them for broad topical coverage where a specific date is meaningless.
 
-ANCHOR THE START YEAR TO THE EPISODE'S NARRATIVE — NOT THE BROADER TOPIC:
-- For multi-part series, "covers.startYear" should reflect where THIS PART's narrative actually begins, not the whole series' topic.
-- Background context references don't count. Example: an episode titled "Why Marie Antoinette became hated (Part 1)" should anchor at her arrival in France (1770) or accession as Queen (1774) — NOT her birth in 1755 even if her childhood is mentioned in passing. The episode's main narrative is the events that LED to her being hated, not her cradle.
+ANCHOR THE START YEAR TO THE EPISODE'S NARRATIVE — NOT THE BROADER TOPIC OR SERIES SPAN:
+- For multi-part series, "covers.startYear" should reflect where THIS PART's narrative actually begins. The SERIES TOPIC (e.g. "The 1970s", "The French Revolution", "The Wars of the Roses") is NOT the anchor. The PART's specific subject is.
+- The series span is NEVER a substitute for the part's narrative. If a series is called "The 1970s" and runs across the decade, that does NOT mean every part anchors at 1970. Each part anchors at the year(s) IT specifically narrates.
+- When the title names a SPECIFIC EVENT (a resignation, a battle, a treaty, a coronation, an election, an assassination), anchor at the YEAR OF THAT EVENT.
+- Different parts of the same series typically have DIFFERENT startYears. If you find yourself giving every part of a series the same startYear, you are treating the series' span as the anchor — which is wrong.
+- Prefer TIGHT ranges. An episode about a single event = a 1–3 year range that brackets the event itself, not the surrounding decade. Wide ranges (10+ years) are only for episodes that genuinely sweep across decades.
+- Background context references don't count. Examples to internalise:
+  - "Why Marie Antoinette became hated (Part 1)" → anchor at her arrival in France (1770) or accession as Queen (1774) — NOT her birth in 1755. The episode is about events that led to her being hated, not her cradle.
+  - "The Most Mysterious Resignation in British History | The 1970s EP 3" → Harold Wilson resigned in March 1976. Anchor at 1976 (or a tight 1974–1976 if his final government is covered). NOT 1970–1976. The series spanning the 1970s does NOT justify starting at 1970 — that's the SERIES span, not this PART's narrative.
 - Within a series, Part 1's startYear is usually earlier than later parts'. Don't over-extend Part 1's range backwards into pure backstory.
 
 EVENT IDS:
