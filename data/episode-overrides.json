@@ -1,0 +1,3 @@
+{
+  "$schema-comment": "Keyed by YouTube videoId. Any field set here wins over the LLM classification. Set { \"skip\": true } to drop an episode from the timeline entirely. Example: \"abc123\": { \"covers\": [{ \"startYear\": 1789, \"endYear\": 1799 }], \"eventIds\": [\"french-revolution\"] }"
+}

@@ -1,37 +1,56 @@
 "use client";
 
 import { Chrono } from "react-chrono";
-import { EVENTS } from "@/lib/data/events";
 import { ERA_BY_ID } from "@/lib/data/eras";
 import { formatEventDate } from "@/lib/dates";
-import type { HistoricalEvent } from "@/lib/data/types";
+import type { EventWithEpisodes } from "@/lib/episodes-loader";
 
 type ChronoItem = {
   title: string;
   cardTitle: string;
   cardSubtitle?: string;
   cardDetailedText: string;
+  url?: string;
   media?: {
     type: "IMAGE";
     source: { url: string };
+    name?: string;
   };
 };
 
-function toChronoItem(event: HistoricalEvent): ChronoItem {
+function toChronoItem(event: EventWithEpisodes): ChronoItem {
   const era = ERA_BY_ID[event.era];
+  const ep = event.primaryEpisode;
+  const extraEpisodes = Math.max(0, event.episodes.length - 1);
+
+  const subtitle = ep
+    ? `${era?.name ?? event.era} • ${extraEpisodes > 0 ? `${event.episodes.length} episodes` : "1 episode"}`
+    : era?.name;
+
+  const detailParts = [event.description];
+  if (ep) detailParts.push(`▸ ${ep.title}`);
+  if (extraEpisodes > 0) {
+    detailParts.push(`+ ${extraEpisodes} more episode${extraEpisodes > 1 ? "s" : ""}`);
+  }
+
   const item: ChronoItem = {
     title: formatEventDate(event.year, event.month, event.day),
     cardTitle: event.title,
-    cardSubtitle: era?.name,
-    cardDetailedText: event.description,
+    cardSubtitle: subtitle,
+    cardDetailedText: detailParts.join("\n\n"),
+    url: ep?.url,
   };
-  if (event.imageUrl) {
-    item.media = { type: "IMAGE", source: { url: event.imageUrl } };
+
+  const cover = event.imageUrl ?? ep?.thumbnailUrl;
+  if (cover) {
+    item.media = {
+      type: "IMAGE",
+      source: { url: cover },
+      name: event.title,
+    };
   }
   return item;
 }
-
-const ITEMS: ChronoItem[] = EVENTS.map(toChronoItem);
 
 const THEME = {
   primary: "#d4a85a",
@@ -46,18 +65,20 @@ const THEME = {
   iconBackgroundColor: "#1b1e29",
 };
 
-export default function Timeline() {
+export default function Timeline({ events }: { events: EventWithEpisodes[] }) {
+  const items = events.map(toChronoItem);
+
   return (
     <div className="timeline-shell">
       <Chrono
-        items={ITEMS}
+        items={items}
         mode="VERTICAL_ALTERNATING"
         theme={THEME}
         useReadMore
         enableLayoutSwitch={false}
         scrollable={{ scrollbar: false }}
-        cardHeight={180}
-        contentDetailsHeight={140}
+        cardHeight={200}
+        contentDetailsHeight={160}
         fontSizes={{
           cardSubtitle: "0.8rem",
           cardText: "0.95rem",

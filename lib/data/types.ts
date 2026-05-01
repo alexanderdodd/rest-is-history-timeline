@@ -34,20 +34,8 @@ export type Era = {
   endYear: number;
 };
 
-export type Episode = {
-  id: string;
-  title: string;
-  /** YouTube URL or canonical episode link. */
-  url: string;
-  /** YouTube video ID — used to derive thumbnail URLs. */
-  youtubeId?: string;
-  /** ISO date the episode aired. */
-  publishedAt?: string;
-  /**
-   * Years (or year ranges) on the timeline this episode is "about".
-   * Used to surface the episode when those events/era are in view.
-   */
-  covers: Array<{ startYear: number; endYear: number }>;
-  /** Optional explicit links to event ids. */
-  eventIds?: string[];
-};
+/**
+ * The runtime episode shape lives in `lib/sync/types.ts` as `ClassifiedEpisode`
+ * and is loaded from Vercel Blob via `lib/episodes-loader.ts`. There's no
+ * static episode list in this repo.
+ */

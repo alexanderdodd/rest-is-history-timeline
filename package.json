@@ -7,10 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "sync-episodes": "tsx scripts/sync-episodes.ts"
   },
   "dependencies": {
+    "@vercel/blob": "^2.3.3",
     "next": "^16.2.4",
+    "openai": "^6.35.0",
     "react": "^19.2.5",
     "react-chrono": "^2.9.1",
     "react-dom": "^19.2.5"
@@ -19,6 +22,8 @@
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "dotenv": "^17.4.2",
+    "tsx": "^4.21.0",
     "typescript": "^6.0.3"
   }
 }
