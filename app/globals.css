@@ -137,10 +137,7 @@ body {
   align-items: baseline;
   gap: 0.75rem;
 }
-.search-result-title {
-  font-weight: 500;
-  color: var(--text);
-}
+.search-result-title { font-weight: 500; color: var(--text); }
 .search-result-date {
   font-variant-numeric: tabular-nums;
   font-size: 0.85rem;
@@ -157,104 +154,88 @@ body {
 .search-result-era { color: var(--accent); font-weight: 600; }
 .search-result-reason { color: var(--text-faint); }
 
-/* Brief flash on the event card after a search result selects it. */
+/* Brief flash on a row when a search result selects it. */
 @keyframes event-flash {
-  0% { background: rgba(212, 168, 90, 0); }
-  20% { background: rgba(212, 168, 90, 0.18); }
-  100% { background: rgba(212, 168, 90, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(212, 168, 90, 0); }
+  20% { box-shadow: 0 0 0 6px rgba(212, 168, 90, 0.25); }
+  100% { box-shadow: 0 0 0 0 rgba(212, 168, 90, 0); }
 }
-.event-flash {
-  animation: event-flash 1.5s ease;
-  border-radius: 12px;
-}
+.event-flash { animation: event-flash 1.5s ease; border-radius: 16px; }
 
-.timeline-shell {
-  flex: 1;
+/* ── Timeline (custom — replaces react-chrono) ──────────────────────── */
+.ct-timeline {
+  position: relative;
   width: 100%;
-  min-height: 100vh;
-  padding: 2rem 0;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2.5rem 1rem 4rem;
 }
 
-/* ── react-chrono overrides ────────────────────────────────────────── */
-
-/* Card styling. */
-.rh-card,
-.timeline-shell [class*="TimelineContentDetailsWrapper"],
-.timeline-shell [class*="TimelineCardContent"] {
-  background: var(--bg-elev) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 14px !important;
-  box-shadow: 0 24px 60px -32px rgba(0, 0, 0, 0.7) !important;
+.ct-spine {
+  position: absolute;
+  top: 1rem;
+  bottom: 1rem;
+  left: 50%;
+  width: 2px;
+  background:
+    linear-gradient(
+      to bottom,
+      transparent 0%,
+      var(--accent) 4%,
+      var(--accent) 96%,
+      transparent 100%
+    );
+  transform: translateX(-1px);
+  pointer-events: none;
 }
 
-.rh-card-title {
-  font-family: "Fraunces", "Inter", serif !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.005em !important;
+.ct-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 96px 1fr;
+  align-items: start;
+  margin-bottom: 3.5rem;
 }
 
-.rh-card-subtitle {
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 600 !important;
-  color: var(--accent) !important;
+.ct-card-slot {
+  display: flex;
 }
+.ct-row.ct-left .ct-card-slot { grid-column: 1; justify-content: flex-end; }
+.ct-row.ct-right .ct-card-slot { grid-column: 3; justify-content: flex-start; }
 
-.rh-card-text {
-  line-height: 1.55 !important;
-  color: var(--text) !important;
+.ct-card {
+  width: 100%;
+  max-width: 460px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 28px 70px -36px rgba(0, 0, 0, 0.75), 0 1px 0 rgba(255, 255, 255, 0.02) inset;
+  transition: border-color 0.15s ease, transform 0.15s ease;
 }
+.ct-card:hover { border-color: var(--border-strong); }
 
-/* Thumbnails are click-to-YouTube — wired via event delegation in Timeline.tsx. */
-.rh-card-media,
-.timeline-shell [class*="CardMedia"] img {
-  cursor: pointer;
-  transition: transform 0.15s ease, filter 0.15s ease;
+.ct-cover {
+  display: block;
+  background: var(--bg-elev-2);
+  border-bottom: 1px solid var(--border);
 }
-.rh-card-media:hover,
-.timeline-shell [class*="CardMedia"] img:hover {
-  filter: brightness(1.08);
-  transform: translateY(-1px);
+.ct-cover img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: filter 0.15s ease, transform 0.3s ease;
 }
-.rh-card-media:active,
-.timeline-shell [class*="CardMedia"] img:active {
-  transform: translateY(0);
-}
+a.ct-cover:hover img { filter: brightness(1.08); }
 
-/* Date "title" rendered next to the spine — make it tabular and clear. */
-.rh-title,
-.timeline-shell [class*="TimelineItemTitle"] {
-  font-variant-numeric: tabular-nums !important;
-  font-weight: 600 !important;
-}
-
-/* The vertical spine. */
-.timeline-shell [class*="TimelineMainWrapper"]::before,
-.timeline-shell [class*="VerticalCircleWrapper"]::before {
-  background: linear-gradient(to bottom, var(--border-strong), var(--border)) !important;
-}
-
-/* Hide the read-more chevron noise — use minimal text affordance. */
-.timeline-shell [class*="ChevronIconWrapper"] {
-  background: transparent !important;
-}
-
-/* Read-more / read-less link. */
-.timeline-shell [class*="ShowMore"] {
-  color: var(--accent) !important;
-}
-
-/* Custom card body — replaces react-chrono's default card content so we can
-   render a real list of clickable episode links with summaries. Children
-   passed to <Chrono> replace cardTitle/cardSubtitle/cardDetailedText, so we
-   render the event title and metadata here ourselves. */
-.rh-event-detail {
+.ct-card-body {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  padding: 0.25rem 0;
+  padding: 1rem 1.1rem 1.1rem;
 }
-.rh-event-title {
+
+.ct-event-title {
   margin: 0;
   font-family: "Fraunces", "Inter", serif;
   font-weight: 600;
@@ -262,7 +243,7 @@ body {
   line-height: 1.2;
   color: var(--text);
 }
-.rh-event-title-link {
+.ct-event-title-link {
   color: inherit;
   text-decoration: none;
   background-image: linear-gradient(currentColor, currentColor);
@@ -270,8 +251,9 @@ body {
   background-repeat: no-repeat;
   background-position: 0 100%;
 }
-.rh-event-title-link:hover { color: var(--accent); }
-.rh-event-subtitle {
+.ct-event-title-link:hover { color: var(--accent); }
+
+.ct-event-meta {
   margin: 0;
   display: flex;
   align-items: center;
@@ -280,116 +262,139 @@ body {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--accent);
 }
-.rh-event-dot { color: var(--text-faint); font-weight: 400; }
-.rh-event-desc {
+.ct-event-era { color: var(--accent); }
+.ct-dot-sep { color: var(--text-faint); font-weight: 400; }
+.ct-event-meta > span:nth-child(3) { color: var(--text-dim); }
+
+.ct-event-desc {
   margin: 0;
   line-height: 1.55;
   color: var(--text);
-  font-size: 0.95rem;
+  font-size: 0.92rem;
 }
-.rh-episodes-heading {
-  margin: 0;
+
+.ct-episodes-heading {
+  margin: 0.4rem 0 0.4rem;
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-faint);
   border-top: 1px solid var(--border);
-  padding-top: 0.6rem;
+  padding-top: 0.7rem;
 }
-.rh-episodes-list {
+
+.ct-episodes-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  max-height: 360px;
+  max-height: 420px;
   overflow-y: auto;
   padding-right: 0.25rem;
 }
-.rh-episodes-list::-webkit-scrollbar { width: 6px; }
-.rh-episodes-list::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
-  border-radius: 3px;
-}
-.rh-episode-item {
-  margin: 0;
-  padding: 0;
-}
-.rh-episode-link {
+.ct-episodes-list::-webkit-scrollbar { width: 6px; }
+.ct-episodes-list::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+
+.ct-episode-item { margin: 0; padding: 0; }
+
+.ct-episode-link {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
-  padding: 0.45rem 0.6rem;
+  padding: 0.5rem 0.65rem;
   color: var(--text);
   text-decoration: none;
   border-radius: 8px;
   border-left: 2px solid transparent;
-  background: rgba(255, 255, 255, 0.015);
-  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  background: rgba(255, 255, 255, 0.018);
+  transition: background 0.12s ease, border-color 0.12s ease;
 }
-.rh-episode-link:hover {
-  background: rgba(212, 168, 90, 0.07);
+.ct-episode-link:hover {
+  background: rgba(212, 168, 90, 0.08);
   border-left-color: var(--accent);
 }
-.rh-episode-link:hover .rh-episode-title {
-  color: var(--accent);
-}
-.rh-episode-title {
+.ct-episode-link:hover .ct-episode-title { color: var(--accent); }
+
+.ct-episode-title {
   font-size: 0.88rem;
   font-weight: 500;
   line-height: 1.35;
   color: var(--text);
 }
-.rh-episode-summary {
+.ct-episode-summary {
   font-size: 0.78rem;
   line-height: 1.45;
   color: var(--text-dim);
-  /* Two-line clamp so summaries don't make individual list items huge. */
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-/* Outline / control buttons. */
-.rh-controls,
-.timeline-shell [class*="ControlsWrapper"] {
-  background: var(--bg-elev) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 999px !important;
+/* Marker column (the dot + date next to the spine). */
+.ct-marker {
+  grid-column: 2;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60px;
+  padding-top: 1.5rem;
 }
+.ct-marker-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--accent), 0 0 0 5px var(--accent-soft);
+  z-index: 2;
+  flex-shrink: 0;
+}
+.ct-marker-date {
+  position: absolute;
+  top: 1.5rem;
+  white-space: nowrap;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  font-size: 0.92rem;
+}
+.ct-row.ct-left .ct-marker-date { left: calc(50% + 18px); }
+.ct-row.ct-right .ct-marker-date { right: calc(50% + 18px); }
 
-/* Keep the timeline contents centred and cap the width on big screens. */
-.timeline-shell > div {
-  max-width: 1280px;
-  margin: 0 auto;
-}
-
-/* Force every internal react-chrono wrapper to lay out at its natural
-   height with no scroll container. `scrollable={false}` only disables the
-   library's programmatic scrolling — it leaves overflow:auto + a fixed
-   height on internal wrappers, which traps wheel events whenever the
-   cursor is over the timeline. Override aggressively so the document
-   scrolls instead. */
-.timeline-shell,
-.timeline-shell > div,
-.timeline-shell > div > div,
-.timeline-shell [class*="TimelineMainWrapper"],
-.timeline-shell [class*="OuterCardSection"],
-.timeline-shell [class*="OuterCardWrapper"],
-.timeline-shell [class*="VerticalCircleWrapper"],
-.timeline-shell [class*="TimelineContentRender"],
-.timeline-shell [class*="TimelineToolbarWrapper"] {
-  overflow: visible !important;
-  max-height: none !important;
-}
-/* These specific wrappers are the ones react-chrono sets a fixed height
-   on; without auto-height the cards above stay clipped. */
-.timeline-shell > div,
-.timeline-shell [class*="TimelineMainWrapper"] {
-  height: auto !important;
+/* ── Mobile: collapse to a single column with the spine on the left. ── */
+@media (max-width: 800px) {
+  .ct-timeline { padding: 1.5rem 0.75rem 3rem; }
+  .ct-spine { left: 24px; transform: none; }
+  .ct-row {
+    grid-template-columns: 48px 1fr;
+    margin-bottom: 2.5rem;
+  }
+  .ct-row.ct-left .ct-card-slot,
+  .ct-row.ct-right .ct-card-slot {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+  .ct-marker {
+    grid-column: 1;
+    justify-content: flex-start;
+    padding-left: 16px;
+    padding-top: 0;
+    min-height: auto;
+  }
+  .ct-marker-date {
+    position: static;
+    left: auto;
+    right: auto;
+    margin-left: 0.75rem;
+    font-size: 0.8rem;
+  }
+  .ct-row.ct-left .ct-marker-date,
+  .ct-row.ct-right .ct-marker-date { left: auto; right: auto; }
+  .ct-card { max-width: 100%; }
 }

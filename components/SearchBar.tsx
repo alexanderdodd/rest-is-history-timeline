@@ -31,7 +31,7 @@ function reasonLabel(reason: SearchResult["reason"]): string {
 }
 
 function scrollToEvent(eventId: string): boolean {
-  const el = document.querySelector(`[data-event-id="${eventId}"]`);
+  const el = document.querySelector(`[data-timeline-id="${eventId}"]`);
   if (!el) return false;
   el.scrollIntoView({ behavior: "smooth", block: "center" });
   el.classList.add("event-flash");
