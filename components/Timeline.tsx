@@ -178,6 +178,9 @@ export default function Timeline({ events }: { events: EventWithEpisodes[] }) {
         mode="VERTICAL_ALTERNATING"
         theme={THEME}
         enableLayoutSwitch={false}
+        // Hide react-chrono's built-in toolbar (jump/search/density controls)
+        // — clashes with the dark aesthetic; our own SearchBar replaces it.
+        disableToolbar
         // Let the page (document) scroll, not react-chrono's internal
         // overflow container — otherwise wheel events are trapped when
         // the cursor is over the timeline.
