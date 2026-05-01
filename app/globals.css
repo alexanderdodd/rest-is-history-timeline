@@ -465,37 +465,63 @@ a.ct-cover:hover img { filter: brightness(1.08); }
   overflow: hidden;
 }
 
-/* Marker column (the dot + date next to the spine). */
+/* Marker column (the dot + date next to the spine, plus a horizontal
+   connector line to the card so each date unambiguously belongs to the
+   card on the same row). */
 .ct-marker {
   grid-column: 2;
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 60px;
-  padding-top: 1.5rem;
+  min-height: 36px;
 }
 .ct-marker-dot {
+  position: absolute;
+  top: 1.1rem;
+  left: 50%;
+  transform: translateX(-50%);
   width: 14px;
   height: 14px;
   border-radius: 50%;
   background: var(--accent);
   border: 3px solid var(--bg);
   box-shadow: 0 0 0 1px var(--accent), 0 0 0 5px var(--accent-soft);
-  z-index: 2;
-  flex-shrink: 0;
+  z-index: 3;
 }
 .ct-marker-date {
   position: absolute;
-  top: 1.5rem;
+  top: 1.1rem;
   white-space: nowrap;
   color: var(--text);
   font-variant-numeric: tabular-nums;
   font-weight: 500;
-  font-size: 0.92rem;
+  font-size: 0.85rem;
+  line-height: 14px; /* match dot height so text baseline aligns to dot centre */
+  z-index: 2;
 }
-.ct-row.ct-left .ct-marker-date { left: calc(50% + 18px); }
-.ct-row.ct-right .ct-marker-date { right: calc(50% + 18px); }
+.ct-row.ct-left .ct-marker-date { left: calc(50% + 14px); }
+.ct-row.ct-right .ct-marker-date { right: calc(50% + 14px); }
+
+/* Horizontal connector line from the dot to the card edge — same row,
+   opposite side from the date. Subtle accent tint so the eye reads it as
+   a continuation of the spine. */
+.ct-marker::before {
+  content: "";
+  position: absolute;
+  top: calc(1.1rem + 6.5px);
+  height: 1px;
+  background: rgba(212, 168, 90, 0.4);
+  z-index: 1;
+  pointer-events: none;
+}
+.ct-row.ct-left .ct-marker::before {
+  right: 50%;
+  margin-right: 7px;
+  width: calc(50% - 7px);
+}
+.ct-row.ct-right .ct-marker::before {
+  left: 50%;
+  margin-left: 7px;
+  width: calc(50% - 7px);
+}
 
 /* ── Mobile: collapse to a single column with the spine on the left. ── */
 @media (max-width: 800px) {
@@ -512,19 +538,31 @@ a.ct-cover:hover img { filter: brightness(1.08); }
   }
   .ct-marker {
     grid-column: 1;
-    justify-content: flex-start;
-    padding-left: 16px;
-    padding-top: 0;
     min-height: auto;
+    display: flex;
+    align-items: flex-start;
+    padding-top: 1rem;
+  }
+  .ct-marker-dot {
+    position: static;
+    left: auto;
+    top: auto;
+    transform: none;
+    margin-left: 14px;
   }
   .ct-marker-date {
     position: static;
     left: auto;
     right: auto;
-    margin-left: 0.75rem;
-    font-size: 0.8rem;
+    top: auto;
+    margin-left: 0.5rem;
+    margin-top: 0;
+    line-height: 14px;
+    font-size: 0.78rem;
   }
   .ct-row.ct-left .ct-marker-date,
   .ct-row.ct-right .ct-marker-date { left: auto; right: auto; }
+  /* Hide the horizontal connector on mobile — vertical spine is enough. */
+  .ct-marker::before { display: none; }
   .ct-card { max-width: 100%; }
 }
