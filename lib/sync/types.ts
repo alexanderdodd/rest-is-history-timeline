@@ -20,10 +20,18 @@ export type CoverRange = {
 /**
  * When an episode is part of a multi-part series (e.g. "The French Revolution
  * | Part 2 | The Diamond Necklace Scandal"), the classifier extracts the
- * series identity here. partNumber is 1-indexed; totalParts is best-effort.
+ * series identity here.
+ *
+ * `topic` is the canonical show topic with season/part markers stripped — kept
+ * stable across multiple "series" (seasons) of the same show. `seriesNumber`
+ * is the season/series index (1-indexed; defaults to 1 when the title has no
+ * season indicator). This split lets us render unified labels like
+ * "The French Revolution: Series 2 - Part 3 of 6" while still grouping every
+ * "The French Revolution" cluster together regardless of season.
  */
 export type SeriesInfo = {
-  name: string;
+  topic: string;
+  seriesNumber: number;
   partNumber: number;
   totalParts?: number;
 };

@@ -16,7 +16,7 @@ import type {
 } from "./types";
 import type { YouTubeVideo } from "./youtube";
 
-export const CLASSIFIER_VERSION = "2026-05-01.v4";
+export const CLASSIFIER_VERSION = "2026-05-01.v5";
 export const CLASSIFIER_MODEL = "anthropic/claude-haiku-4.5";
 
 const SYSTEM_PROMPT = `You categorise episodes of "The Rest Is History" podcast by the historical period(s) they discuss and identify multi-part series membership.
@@ -27,7 +27,7 @@ Given a YouTube episode title and description, output a JSON object:
   "covers": [{"startYear": <number>, "endYear": <number>, "startMonth"?: <1-12>, "startDay"?: <1-31>, "endMonth"?: <1-12>, "endDay"?: <1-31>}, ...],
   "eventIds": [<string>, ...],
   "confidence": "high" | "medium" | "low",
-  "series": { "name": <string>, "partNumber": <number>, "totalParts"?: <number> } | null
+  "series": { "topic": <string>, "seriesNumber": <number>, "partNumber": <number>, "totalParts"?: <number> } | null
 }
 
 COVERS — temporal scope of THIS episode:
@@ -51,11 +51,20 @@ CONFIDENCE:
 
 SERIES DETECTION:
 - Look for "Part 2", "Episode 3", "S02E01", "(Part 4)", "| Part N |", "Season X Episode Y", or similar patterns in the title. If the title clearly identifies the episode as part of a multi-part series, set "series".
-- ALWAYS INCLUDE THE SEASON IN THE SERIES NAME when one is present in the title. "The French Revolution S02E03" → name: "The French Revolution Season 2". "The French Revolution S03E02" → name: "The French Revolution Season 3". A different season is a DIFFERENT SERIES — they should not share a name.
-- For series with only "Part N" (no season), the canonical name is the topic without ordinal markers (e.g. "The French Revolution"). Be consistent across parts — always include or always omit "The". Prefer "The French Revolution" (with "The") if the title uses that form.
-- Strip "Part N", "Episode N", "SXXEXX", "| Part X |" from the name itself.
-- "partNumber" is 1-indexed within the named series. For "S02E03", partNumber is 3 (the episode within season 2).
-- "totalParts" is the total in the series if you can infer it from "of N" or context; otherwise omit.
+- "topic" is the canonical show topic with ALL season/series/part markers STRIPPED. The topic must be IDENTICAL across every part of every season of the same show. Examples:
+  - "The French Revolution | Part 2 | The Diamond Necklace Scandal" → topic: "The French Revolution"
+  - "The French Revolution S02E03" → topic: "The French Revolution"
+  - "The French Revolution Season 3: The Storming of the Bastille" → topic: "The French Revolution"
+  All three above MUST share the exact same topic string. Be consistent — always include or always omit "The"; prefer "The French Revolution" (with "The") if any title uses that form.
+- "seriesNumber" is the season/series index (1-indexed). Rules:
+  - "S02E03" → seriesNumber: 2.
+  - "Season 3 Episode 5" → seriesNumber: 3.
+  - When the title has NO season indicator (just "Part 2" or no marker at all), use seriesNumber: 1.
+  - Different seasons of the same show share the same topic but have DIFFERENT seriesNumbers.
+- "partNumber" is the 1-indexed part WITHIN this season/series.
+  - "S02E03" → partNumber: 3.
+  - "Part 5 of 6" → partNumber: 5.
+- "totalParts" is the total parts in THIS season/series (e.g. the "6" in "Part 5 of 6"); omit if unknown.
 - If the episode is a one-off (not part of a series), set "series" to null.
 
 Return ONLY the JSON object, no surrounding text or code fences.`;
@@ -104,11 +113,23 @@ function pickDatePart(
 function parseSeries(raw: unknown): SeriesInfo | undefined {
   if (typeof raw !== "object" || raw === null) return undefined;
   const r = raw as Record<string, unknown>;
-  if (typeof r.name !== "string" || typeof r.partNumber !== "number") return undefined;
-  const name = r.name.trim();
-  if (!name) return undefined;
+  // Tolerate the v4 schema where the field was named `name` — treat it as topic.
+  const topicRaw =
+    typeof r.topic === "string"
+      ? r.topic
+      : typeof r.name === "string"
+        ? r.name
+        : null;
+  if (topicRaw === null || typeof r.partNumber !== "number") return undefined;
+  const topic = topicRaw.trim();
+  if (!topic) return undefined;
+  const seriesNumber =
+    typeof r.seriesNumber === "number" && r.seriesNumber > 0
+      ? Math.round(r.seriesNumber)
+      : 1;
   const out: SeriesInfo = {
-    name,
+    topic,
+    seriesNumber,
     partNumber: Math.max(1, Math.round(r.partNumber)),
   };
   if (typeof r.totalParts === "number" && r.totalParts > 0) {

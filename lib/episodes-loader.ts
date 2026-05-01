@@ -81,10 +81,10 @@ export type EpisodeGroup = {
   episodes: PositionedEpisode[];
 };
 
-/** Compare-key for series names — slug-normalised so "The French Revolution"
+/** Compare-key for a topic — slug-normalised so "The French Revolution"
  *  and "French Revolution" cluster together. */
-function seriesKey(name: string): string {
-  return name
+function topicKey(topic: string): string {
+  return topic
     .toLowerCase()
     .replace(/^the\s+/, "")
     .replace(/[^a-z0-9]+/g, "-")
@@ -102,22 +102,24 @@ function precisionScore(ep: PositionedEpisode): number {
 
 /**
  * Sort key for episodes within a year row:
- *   1. series-named episodes cluster by (slugified name, partNumber)
+ *   1. series episodes cluster by topic, then seriesNumber, then partNumber
+ *      — so "Series 1 - Part 1, 2, 3" reads cleanly before "Series 2 - Part 1, 2"
  *   2. standalone episodes (no series) come after, ordered by precise date
  *      then publish order
- * Keeps multi-part series readable in narrative order even when they share
- * a year.
  */
 function withinYearComparator(a: PositionedEpisode, b: PositionedEpisode): number {
-  const aSeries = a.series?.name ?? null;
-  const bSeries = b.series?.name ?? null;
+  const aSeries = a.series ?? null;
+  const bSeries = b.series ?? null;
   if (aSeries && bSeries) {
-    const aKey = seriesKey(aSeries);
-    const bKey = seriesKey(bSeries);
+    const aKey = topicKey(aSeries.topic);
+    const bKey = topicKey(bSeries.topic);
     if (aKey !== bKey) return aKey.localeCompare(bKey);
-    return (a.series!.partNumber ?? 0) - (b.series!.partNumber ?? 0);
+    if (aSeries.seriesNumber !== bSeries.seriesNumber) {
+      return aSeries.seriesNumber - bSeries.seriesNumber;
+    }
+    return (aSeries.partNumber ?? 0) - (bSeries.partNumber ?? 0);
   }
-  if (aSeries) return -1; // series-named first
+  if (aSeries) return -1; // series episodes first
   if (bSeries) return 1;
   const ap = precisionScore(a);
   const bp = precisionScore(b);

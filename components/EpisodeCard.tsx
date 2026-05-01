@@ -24,18 +24,24 @@ function dateRangeLabel(ep: PositionedEpisode): string {
 
 function seriesBadgeText(ep: PositionedEpisode): string | null {
   if (!ep.series) return null;
-  const { name, partNumber, totalParts } = ep.series;
-  return totalParts
-    ? `${name} · Part ${partNumber} of ${totalParts}`
-    : `${name} · Part ${partNumber}`;
+  const { topic, seriesNumber, partNumber, totalParts } = ep.series;
+  const partLabel = totalParts
+    ? `Part ${partNumber} of ${totalParts}`
+    : `Part ${partNumber}`;
+  return `${topic}: Series ${seriesNumber} - ${partLabel}`;
 }
 
-/** URL-safe stable id for a series name — used for SVG connector grouping. */
+/** URL-safe slug of a string — used for the topic component of series ids. */
 export function seriesSlug(name: string): string {
   return name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+/** Stable id for a specific (topic, seriesNumber) pair — drives connector grouping. */
+function seriesIdFor(series: { topic: string; seriesNumber: number }): string {
+  return `${seriesSlug(series.topic)}-s${series.seriesNumber}`;
 }
 
 /**
@@ -58,7 +64,7 @@ export default function EpisodeCard({
   return (
     <article
       data-timeline-id={episode.youtubeId}
-      data-series-id={episode.series ? seriesSlug(episode.series.name) : undefined}
+      data-series-id={episode.series ? seriesIdFor(episode.series) : undefined}
       data-series-part={episode.series ? episode.series.partNumber : undefined}
       className={`ct-card${compact ? " ct-card-compact" : ""}${episode.series ? " ct-card-in-series" : ""}`}
     >
