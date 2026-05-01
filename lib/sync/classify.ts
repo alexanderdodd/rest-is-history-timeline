@@ -16,7 +16,7 @@ import type {
 } from "./types";
 import type { YouTubeVideo } from "./youtube";
 
-export const CLASSIFIER_VERSION = "2026-05-01.v6";
+export const CLASSIFIER_VERSION = "2026-05-01.v7";
 export const CLASSIFIER_MODEL = "anthropic/claude-haiku-4.5";
 
 const SYSTEM_PROMPT = `You categorise episodes of "The Rest Is History" podcast by the historical period(s) they discuss and identify multi-part series membership.
@@ -41,9 +41,12 @@ ANCHOR THE START YEAR TO THE EPISODE'S NARRATIVE — NOT THE BROADER TOPIC OR SE
 - When the title names a SPECIFIC EVENT (a resignation, a battle, a treaty, a coronation, an election, an assassination), anchor at the YEAR OF THAT EVENT.
 - Different parts of the same series typically have DIFFERENT startYears. If you find yourself giving every part of a series the same startYear, you are treating the series' span as the anchor — which is wrong.
 - Prefer TIGHT ranges. An episode about a single event = a 1–3 year range that brackets the event itself, not the surrounding decade. Wide ranges (10+ years) are only for episodes that genuinely sweep across decades.
+- DO NOT bracket the entire topical era for an episode about a specific slice of it. An episode about a person who lived 1789–1799 should anchor at when that person was actually prominent, not the whole decade.
 - Background context references don't count. Examples to internalise:
   - "Why Marie Antoinette became hated (Part 1)" → anchor at her arrival in France (1770) or accession as Queen (1774) — NOT her birth in 1755. The episode is about events that led to her being hated, not her cradle.
   - "The Most Mysterious Resignation in British History | The 1970s EP 3" → Harold Wilson resigned in March 1976. Anchor at 1976 (or a tight 1974–1976 if his final government is covered). NOT 1970–1976. The series spanning the 1970s does NOT justify starting at 1970 — that's the SERIES span, not this PART's narrative.
+  - "Guillotine: Symbol Of The Terror | The French Revolution S02E03" → the guillotine was first used to execute someone in April 1792 and dominated the Reign of Terror (1793–1794). Anchor 1792–1794, NOT 1789–1794. The Revolution started in 1789 but the episode is about USING the guillotine, not the political climate that proposed it as a humane idea years earlier.
+  - "The Most Unexpected Revolutionary: <person> | The French Revolution S03E02" → if the figure rose to prominence around 1793 and was executed in 1794, anchor 1793–1794. DO NOT bracket 1789–1799 just because the show is called "The French Revolution" — that's the series' span, not this part's.
 - Within a series, Part 1's startYear is usually earlier than later parts'. Don't over-extend Part 1's range backwards into pure backstory.
 
 EVENT IDS:
@@ -57,11 +60,15 @@ CONFIDENCE:
 
 SERIES DETECTION:
 - Look for "Part 2", "Episode 3", "S02E01", "(Part 4)", "| Part N |", "Season X Episode Y", or similar patterns in the title. If the title clearly identifies the episode as part of a multi-part series, set "series".
-- "topic" is the canonical show topic with ALL season/series/part markers STRIPPED. The topic must be IDENTICAL across every part of every season of the same show. Examples:
-  - "The French Revolution | Part 2 | The Diamond Necklace Scandal" → topic: "The French Revolution"
+- "topic" is the canonical SHOW NAME with ALL season/series/part markers AND chapter/episode subtitles STRIPPED. The topic must be IDENTICAL across every part of every season of the same show. The chapter title (the bit unique to this episode) is NOT part of the topic — it belongs to this part only.
+- IGNORE chapter / episode subtitles whether they precede OR follow the show name. Examples:
+  - "The French Revolution | Part 2 | The Diamond Necklace Scandal" → topic: "The French Revolution" (NOT "The French Revolution | The Diamond Necklace Scandal")
   - "The French Revolution S02E03" → topic: "The French Revolution"
   - "The French Revolution Season 3: The Storming of the Bastille" → topic: "The French Revolution"
-  All three above MUST share the exact same topic string. Be consistent — always include or always omit "The"; prefer "The French Revolution" (with "The") if any title uses that form.
+  - "The Storming of the Bastille | French Revolution | Part 5" → topic: "The French Revolution" (NOT "The Storming of the Bastille | French Revolution"). The chapter title at the FRONT is just as much a chapter title as one at the back.
+  - "Guillotine: Symbol Of The Terror (The French Revolution S02E03)" → topic: "The French Revolution"
+  All of the above MUST share the exact same topic string. Be consistent — always include or always omit "The"; prefer "The French Revolution" (with "The") if any title uses that form.
+- Heuristic for finding the show name: it's the part of the title that RECURS across multiple episodes. The chapter title is the part unique to one episode. Strip the unique part, keep the recurring part.
 - "seriesNumber" is the season/series index (1-indexed). Rules:
   - "S02E03" → seriesNumber: 2.
   - "Season 3 Episode 5" → seriesNumber: 3.
