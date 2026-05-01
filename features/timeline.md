@@ -10,7 +10,8 @@ The single-page, vertically-alternating timeline that anchors this app. Hand-rol
 - The thumbnail and title both link straight to the episode on YouTube. Single-click, opens in a new tab.
 - Date label next to the spine shows the start year, alternating opposite to the card.
 - Mobile collapses to a single column with the spine on the left.
-- The timeline is the **only** thing on the page below the docked search bar — no header, no nav, no curated event cards.
+- **Curated historical events appear as context anchors** between episode rows — small, no thumbnail, accent stripe. They orient the reader chronologically (e.g. "First World War begins", "Fall of the Berlin Wall") without competing with the show's content.
+- The timeline is the only thing on the page below the docked search bar — no header, no nav.
 
 ## Why
 The whole point of this app is "scrub to a period and see the show's episodes about it." The earlier design had curated historical events as the primary cards, with episodes nested inside them — but that put the show's content one click away and forced the classifier to assign each episode to an event-shaped bucket. Episodes-per-card flips the relationship: the show's episodes *are* the timeline; curated events are reference-only data the classifier can use for `eventIds` matching.

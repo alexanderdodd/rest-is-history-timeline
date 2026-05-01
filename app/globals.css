@@ -271,6 +271,59 @@ body {
 }
 .ct-row.ct-left .ct-card-compact .ct-card-body { order: 1; }
 
+/* ── Historical event markers ───────────────────────────────────────── */
+/* Curated context anchors — visually distinct from episode cards.       */
+.ct-event-marker {
+  width: 100%;
+  max-width: 380px;
+  padding: 0.85rem 1.1rem;
+  background: rgba(212, 168, 90, 0.04);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 12px 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.ct-row.ct-left .ct-event-marker {
+  border-left: 0;
+  border-right: 3px solid var(--accent);
+  border-radius: 12px 0 0 12px;
+  text-align: right;
+}
+.ct-event-marker-era {
+  margin: 0;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.ct-event-marker-title {
+  margin: 0;
+  font-family: "Fraunces", "Inter", serif;
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1.25;
+  color: var(--text);
+}
+.ct-event-marker-desc {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+/* Distinguish event rows at the spine: hollow ring + accent date text. */
+.ct-row-event .ct-marker-dot {
+  background: var(--bg);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.ct-row-event .ct-marker-date {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
 .ct-cover {
   display: block;
   background: var(--bg-elev-2);

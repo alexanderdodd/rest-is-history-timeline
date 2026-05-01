@@ -131,6 +131,14 @@ export const EVENTS: HistoricalEvent[] = [
     era: "classical",
   },
   {
+    id: "crucifixion",
+    year: 33,
+    title: "Crucifixion of Jesus",
+    description:
+      "Traditional date for the crucifixion of Jesus of Nazareth in Roman Judea — the foundational event of Christianity.",
+    era: "classical",
+  },
+  {
     id: "vesuvius",
     year: 79,
     month: 8,
@@ -345,6 +353,16 @@ export const EVENTS: HistoricalEvent[] = [
     era: "modern",
   },
   {
+    id: "us-civil-war-begins",
+    year: 1861,
+    month: 4,
+    day: 12,
+    title: "US Civil War begins",
+    description:
+      "Confederate forces fire on Fort Sumter; the United States enters four years of civil war.",
+    era: "modern",
+  },
+  {
     id: "us-civil-war-end",
     year: 1865,
     month: 4,
@@ -382,6 +400,16 @@ export const EVENTS: HistoricalEvent[] = [
     title: "Russian Revolution",
     description:
       "The October Revolution brings the Bolsheviks to power.",
+    era: "modern",
+  },
+  {
+    id: "ww1-ends",
+    year: 1918,
+    month: 11,
+    day: 11,
+    title: "End of the First World War",
+    description:
+      "Armistice signed at Compiègne; the guns fall silent on the Western Front.",
     era: "modern",
   },
   {
@@ -427,6 +455,16 @@ export const EVENTS: HistoricalEvent[] = [
     era: "contemporary",
   },
   {
+    id: "israel-founded",
+    year: 1948,
+    month: 5,
+    day: 14,
+    title: "State of Israel founded",
+    description:
+      "David Ben-Gurion declares the establishment of the State of Israel as the British Mandate ends.",
+    era: "contemporary",
+  },
+  {
     id: "prc-founded",
     year: 1949,
     month: 10,
@@ -434,6 +472,26 @@ export const EVENTS: HistoricalEvent[] = [
     title: "People's Republic of China founded",
     description:
       "Mao Zedong proclaims the People's Republic from Tiananmen.",
+    era: "contemporary",
+  },
+  {
+    id: "sputnik",
+    year: 1957,
+    month: 10,
+    day: 4,
+    title: "Sputnik 1 launched",
+    description:
+      "The Soviet Union launches the first artificial satellite, opening the Space Age and the Cold War space race.",
+    era: "contemporary",
+  },
+  {
+    id: "berlin-wall-built",
+    year: 1961,
+    month: 8,
+    day: 13,
+    title: "Berlin Wall built",
+    description:
+      "East Germany begins construction of the wall sealing off West Berlin — the iconic barrier of the Cold War.",
     era: "contemporary",
   },
   {
@@ -454,6 +512,16 @@ export const EVENTS: HistoricalEvent[] = [
     title: "Fall of the Berlin Wall",
     description:
       "East Germans cross freely into West Berlin; the Cold War order begins to dissolve.",
+    era: "contemporary",
+  },
+  {
+    id: "german-reunification",
+    year: 1990,
+    month: 10,
+    day: 3,
+    title: "German reunification",
+    description:
+      "East and West Germany formally reunify after 45 years of Cold War partition.",
     era: "contemporary",
   },
   {
