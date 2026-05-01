@@ -256,19 +256,30 @@ body {
 .ct-card:hover { border-color: var(--border-strong); }
 
 /* Compact horizontal layout for stacked cards (year shared by 2+ episodes).
-   Thumbnail on the side, body alongside it. Description hidden by default
-   and revealed on hover via a fluid expand animation (see below). */
+   The thumbnail is a rounded 16:9 tile sitting inside the card with padding
+   around it. The earlier design stretched the thumbnail to full card height,
+   which made object-fit: cover throw away the left and right of the wide
+   source image and show only a narrow centre strip — the YouTube cover
+   art was unreadable. With aspect-ratio: 16/9 on the cover the source ratio
+   matches the container ratio and the whole thumbnail is always visible.
+   Description is hidden by default and revealed on hover (see below). */
 .ct-card-compact {
   display: grid;
-  grid-template-columns: 128px 1fr;
+  grid-template-columns: 160px 1fr;
   border-radius: 12px;
+  padding: 0.5rem;
+  gap: 0.7rem;
+  align-items: start;
   transform-origin: left center;
 }
 .ct-row.ct-left .ct-card-compact { transform-origin: right center; }
 .ct-card-compact .ct-cover {
   display: block;
-  border-bottom: none;
-  border-right: 1px solid var(--border);
+  border: none;
+  border-radius: 8px;
+  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 16 / 9;
 }
 .ct-card-compact .ct-cover img {
   width: 100%;
@@ -277,9 +288,8 @@ body {
   display: block;
 }
 .ct-card-compact .ct-card-body {
-  padding: 0.6rem 0.8rem;
+  padding: 0;
   gap: 0.25rem;
-  justify-content: center;
 }
 .ct-card-compact .ct-event-title {
   font-size: 0.95rem;
@@ -291,16 +301,12 @@ body {
   overflow: hidden;
 }
 .ct-card-compact .ct-event-meta { font-size: 0.65rem; }
-/* On the left side of the spine, mirror the compact layout so the thumbnail
-   sits closest to the spine. */
+/* Mirror compact layout on left-side rows so the thumbnail still sits
+   closest to the spine. */
 .ct-row.ct-left .ct-card-compact {
-  grid-template-columns: 1fr 128px;
+  grid-template-columns: 1fr 160px;
 }
-.ct-row.ct-left .ct-card-compact .ct-cover {
-  order: 2;
-  border-right: none;
-  border-left: 1px solid var(--border);
-}
+.ct-row.ct-left .ct-card-compact .ct-cover { order: 2; }
 .ct-row.ct-left .ct-card-compact .ct-card-body { order: 1; }
 
 /* Hover-to-expand for compact cards: reveal the truncated description and
