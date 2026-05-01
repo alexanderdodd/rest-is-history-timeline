@@ -5,7 +5,9 @@ The single-page, vertically-alternating timeline of human history that anchors t
 ## What it does
 - Renders ~50 curated major world-history events from **3000 BC → present** as cards alternating left/right of a central spine.
 - Scroll the page vertically to move through history (oldest at top → most recent at bottom).
-- Each card shows: a tabular date (e.g. `15 Mar 44 BC`), the event title, an era subtitle, and a short description. Events with an `imageUrl` show a cover image — for events that get associated with a podcast episode, this will be the episode's YouTube thumbnail.
+- Each card shows: a tabular date (e.g. `15 Mar 44 BC`), the event title, an era subtitle (e.g. "Early Modern • 40 episodes"), and a short description. Events with a primary episode show that episode's YouTube thumbnail as the cover image.
+- **All matching episodes are listed inside the card**, not just the primary. Each title is a clickable link to its YouTube video (new tab). The list scrolls internally if there are many (cap ~320px before scroll). Sorted: primary first, then by publish date.
+- The thumbnail also links to the primary episode (event delegation in `Timeline.tsx`, because react-chrono renders `<img>` without URL binding). The header title links there too via react-chrono's per-item `url`.
 - The timeline is the **only** thing on the page. No header, no nav, no side panel.
 
 ## Why
@@ -22,6 +24,9 @@ Centrepiece of the app. Everything else (podcast episode overlay, search, sharin
 - **`react-chrono` types are broken**: its `package.json` `types` field points at a non-existent file (`dist/index.d.ts`). The actual types are at `dist/react-chrono.d.ts`. We work around this with a small module shim at `types/react-chrono.d.ts`. Our wrapper is the type-discipline boundary.
 - **CSS overrides are selector-soup**: `react-chrono` uses styled-components; many internal class names are hashed. We pin the ones we can via the `classNames` prop and target the rest with `[class*="..."]` matchers. Brittle but workable.
 - **No SSR concerns**: `react-chrono` runs fine inside a `"use client"` component under the App Router. The page itself prerenders statically (`next build` reports `○ /` as `(Static)`).
+- **Episode list rendered as react-chrono `children`, not `cardDetailedText`**: react-chrono's `cardDetailedText` is plain text only — no clickable links. Passing one React node per item via `children` lets us render a real `<ul>` of `<a>` tags. The trade-off is that `cardDetailedText` and `useReadMore` are unused; we control the body's height via `max-height` + internal scroll on `.rh-episodes-list`.
+- **Thumbnail click via delegation, not anchor wrapping**: wrapping the rendered `<img>` in an `<a>` would mutate react-chrono's DOM tree mid-render. Instead, a single click handler on `.timeline-shell` matches the clicked image's `src` against a `Map<thumbnailUrl, episodeUrl>` and `window.open`s the URL. Native cmd-click / middle-click semantics are lost (a known cost), but reconciliation stays clean. The handler explicitly bails on `closest("a")` so the per-episode links inside the card aren't hijacked.
+- **`scrollable={false}` on `<Chrono>`**: with the default `scrollable={true}`, react-chrono mounts an internal overflow container that traps wheel events when the cursor is over the timeline. We want the document to scroll instead — so `scrollable={false}` and let the page handle it.
 
 ## Future hooks (deliberately scaffolded)
 - **YouTube thumbnails as event covers**: each `HistoricalEvent` already has an optional `imageUrl`. When `lib/data/episodes.ts` is populated, we'll resolve `episode.youtubeId` → `https://i.ytimg.com/vi/<id>/mqdefault.jpg` and assign that to the matching event's `imageUrl`. `next.config.mjs` already whitelists the YouTube image hosts.
