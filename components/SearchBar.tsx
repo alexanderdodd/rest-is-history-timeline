@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@vercel/analytics";
 import {
   useCallback,
   useEffect,
@@ -83,12 +84,22 @@ export default function SearchBar({ episodes }: Props) {
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  const select = useCallback((r: SearchResult) => {
-    if (scrollToTimelineId(r.episode.youtubeId)) {
-      setOpen(false);
-      inputRef.current?.blur();
-    }
-  }, []);
+  const select = useCallback(
+    (r: SearchResult) => {
+      if (scrollToTimelineId(r.episode.youtubeId)) {
+        setOpen(false);
+        inputRef.current?.blur();
+        // Bucket the query length so we don't leak the actual search text.
+        const len = query.length;
+        const queryLen = len <= 3 ? "1-3" : len <= 10 ? "4-10" : "11+";
+        track("search_select", {
+          match_reason: r.reason,
+          query_len: queryLen,
+        });
+      }
+    },
+    [query],
+  );
 
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {

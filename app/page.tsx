@@ -1,5 +1,6 @@
 import EpisodeCard from "@/components/EpisodeCard";
 import EventMarker from "@/components/EventMarker";
+import ScrollDepthTracker from "@/components/ScrollDepthTracker";
 import SearchBar from "@/components/SearchBar";
 import SeriesConnectors from "@/components/SeriesConnectors";
 import Timeline, { type TimelineItem } from "@/components/Timeline";
@@ -127,6 +128,7 @@ export default async function Home() {
       />
       <SearchBar episodes={episodes} />
       <Timeline items={items} overlay={<SeriesConnectors />} />
+      <ScrollDepthTracker />
     </main>
   );
 }

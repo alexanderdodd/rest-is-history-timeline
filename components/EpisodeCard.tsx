@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@vercel/analytics";
 import { formatEventDate, formatYearLabel } from "@/lib/dates";
 import type { PositionedEpisode } from "@/lib/episodes-loader";
 
@@ -57,6 +58,14 @@ export default function EpisodeCard({
   episode: PositionedEpisode;
   compact?: boolean;
 }) {
+  const onEpisodeClick = () => {
+    track("episode_click", {
+      episode_id: episode.youtubeId,
+      year: episode.timelineYear,
+      confidence: episode.confidence,
+    });
+  };
+
   return (
     <article
       data-timeline-id={episode.youtubeId}
@@ -71,6 +80,7 @@ export default function EpisodeCard({
           rel="noopener noreferrer"
           className="ct-cover"
           aria-label={`Watch ${episode.title} on YouTube`}
+          onClick={onEpisodeClick}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={episode.thumbnailUrl} alt={episode.title} loading="lazy" />
@@ -86,6 +96,7 @@ export default function EpisodeCard({
             target="_blank"
             rel="noopener noreferrer"
             className="ct-event-title-link"
+            onClick={onEpisodeClick}
           >
             {episode.title}
           </a>
