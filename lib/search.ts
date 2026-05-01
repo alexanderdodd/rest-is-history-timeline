@@ -1,16 +1,16 @@
 /**
  * Search helpers for the timeline. Two query modes:
- *   - year: "1789", "44 BC", "AD 800" — match by closeness to that year
+ *   - year: "1789", "44 BC", "AD 800" — episodes whose covers contain (or
+ *           are nearest to) the year, sorted by closeness to start year
  *   - text: "napoleon", "french revolution" — substring match on
- *           title + description (era as a secondary signal)
+ *           episode title + description, title hits beating description hits
  */
 
-import type { HistoricalEvent } from "@/lib/data/types";
+import type { PositionedEpisode } from "@/lib/episodes-loader";
 
 export type SearchResult = {
-  event: HistoricalEvent;
-  /** What about this event matched. Used for the result subtitle. */
-  reason: "exact-year" | "near-year" | "title" | "description";
+  episode: PositionedEpisode;
+  reason: "year-in-range" | "near-year" | "title" | "description";
   /** Lower is better; used to sort. */
   score: number;
 };
@@ -28,7 +28,6 @@ export function parseYearQuery(raw: string): number | null {
   const s = raw.trim().toLowerCase();
   if (!s) return null;
 
-  // Try plain integer first.
   const plain = /^-?\d+$/.exec(s);
   if (plain) return Number(plain[0]);
 
@@ -43,24 +42,29 @@ export function parseYearQuery(raw: string): number | null {
   return null;
 }
 
-const MAX_RESULTS = 8;
+const MAX_RESULTS = 12;
 
-export function searchEvents(
+export function searchEpisodes(
   query: string,
-  events: HistoricalEvent[],
+  episodes: PositionedEpisode[],
 ): SearchResult[] {
   const q = query.trim();
   if (!q) return [];
 
   const year = parseYearQuery(q);
   if (year !== null) {
-    return events
-      .map<SearchResult>((event) => {
-        const distance = Math.abs(event.year - year);
+    return episodes
+      .map<SearchResult>((ep) => {
+        const inRange = ep.covers.some(
+          (c) => year >= c.startYear && year <= c.endYear,
+        );
+        const distance = Math.abs(ep.timelineYear - year);
         return {
-          event,
-          reason: distance === 0 ? "exact-year" : "near-year",
-          score: distance,
+          episode: ep,
+          reason: inRange ? "year-in-range" : "near-year",
+          // Boost in-range matches by giving them a 0-1000 score band ahead
+          // of any near-year fallback.
+          score: inRange ? distance : 10_000 + distance,
         };
       })
       .sort((a, b) => a.score - b.score)
@@ -68,20 +72,14 @@ export function searchEvents(
   }
 
   const needle = q.toLowerCase();
-  return events
-    .map<SearchResult | null>((event) => {
-      const title = event.title.toLowerCase();
-      const desc = event.description.toLowerCase();
+  return episodes
+    .map<SearchResult | null>((ep) => {
+      const title = ep.title.toLowerCase();
+      const desc = ep.description.toLowerCase();
       const titleIdx = title.indexOf(needle);
       const descIdx = desc.indexOf(needle);
-      if (titleIdx >= 0) {
-        // Earlier matches in the title rank higher.
-        return { event, reason: "title", score: titleIdx };
-      }
-      if (descIdx >= 0) {
-        // Description matches rank below any title hit.
-        return { event, reason: "description", score: 1000 + descIdx };
-      }
+      if (titleIdx >= 0) return { episode: ep, reason: "title", score: titleIdx };
+      if (descIdx >= 0) return { episode: ep, reason: "description", score: 1000 + descIdx };
       return null;
     })
     .filter((r): r is SearchResult => r !== null)

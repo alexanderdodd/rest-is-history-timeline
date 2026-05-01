@@ -8,19 +8,18 @@ import {
   useRef,
   useState,
 } from "react";
-import { ERA_BY_ID } from "@/lib/data/eras";
-import { formatEventDate } from "@/lib/dates";
-import { searchEvents, type SearchResult } from "@/lib/search";
-import type { HistoricalEvent } from "@/lib/data/types";
+import { formatYearLabel } from "@/lib/dates";
+import { searchEpisodes, type SearchResult } from "@/lib/search";
+import type { PositionedEpisode } from "@/lib/episodes-loader";
 
 type Props = {
-  events: HistoricalEvent[];
+  episodes: PositionedEpisode[];
 };
 
 function reasonLabel(reason: SearchResult["reason"]): string {
   switch (reason) {
-    case "exact-year":
-      return "Exact year";
+    case "year-in-range":
+      return "Year in range";
     case "near-year":
       return "Closest year";
     case "title":
@@ -30,8 +29,15 @@ function reasonLabel(reason: SearchResult["reason"]): string {
   }
 }
 
-function scrollToEvent(eventId: string): boolean {
-  const el = document.querySelector(`[data-timeline-id="${eventId}"]`);
+function dateRangeLabel(ep: PositionedEpisode): string {
+  const c = ep.covers[0];
+  if (!c) return "";
+  if (c.startYear === c.endYear) return formatYearLabel(c.startYear);
+  return `${formatYearLabel(c.startYear)} – ${formatYearLabel(c.endYear)}`;
+}
+
+function scrollToTimelineId(id: string): boolean {
+  const el = document.querySelector(`[data-timeline-id="${id}"]`);
   if (!el) return false;
   el.scrollIntoView({ behavior: "smooth", block: "center" });
   el.classList.add("event-flash");
@@ -39,7 +45,7 @@ function scrollToEvent(eventId: string): boolean {
   return true;
 }
 
-export default function SearchBar({ events }: Props) {
+export default function SearchBar({ episodes }: Props) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -47,7 +53,7 @@ export default function SearchBar({ events }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const listboxId = useId();
 
-  const results = useMemo(() => searchEvents(query, events), [query, events]);
+  const results = useMemo(() => searchEpisodes(query, episodes), [query, episodes]);
 
   useEffect(() => {
     setActiveIndex(0);
@@ -78,7 +84,7 @@ export default function SearchBar({ events }: Props) {
   }, []);
 
   const select = useCallback((r: SearchResult) => {
-    if (scrollToEvent(r.event.id)) {
+    if (scrollToTimelineId(r.episode.youtubeId)) {
       setOpen(false);
       inputRef.current?.blur();
     }
@@ -124,7 +130,7 @@ export default function SearchBar({ events }: Props) {
           aria-controls={listboxId}
           aria-autocomplete="list"
           className="search-input"
-          placeholder="Search events or year — try 1789, Napoleon, 44 BC"
+          placeholder="Search episodes or year — try 1789, Napoleon, 44 BC"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -161,30 +167,24 @@ export default function SearchBar({ events }: Props) {
           {results.length === 0 && (
             <li className="search-empty">No matches.</li>
           )}
-          {results.map((r, i) => {
-            const era = ERA_BY_ID[r.event.era];
-            return (
-              <li
-                key={r.event.id}
-                role="option"
-                aria-selected={i === activeIndex}
-                className={`search-result ${i === activeIndex ? "is-active" : ""}`}
-                onMouseEnter={() => setActiveIndex(i)}
-                onClick={() => select(r)}
-              >
-                <div className="search-result-row">
-                  <span className="search-result-title">{r.event.title}</span>
-                  <span className="search-result-date">
-                    {formatEventDate(r.event.year, r.event.month, r.event.day)}
-                  </span>
-                </div>
-                <div className="search-result-meta">
-                  <span className="search-result-era">{era?.name ?? r.event.era}</span>
-                  <span className="search-result-reason">{reasonLabel(r.reason)}</span>
-                </div>
-              </li>
-            );
-          })}
+          {results.map((r, i) => (
+            <li
+              key={r.episode.youtubeId}
+              role="option"
+              aria-selected={i === activeIndex}
+              className={`search-result ${i === activeIndex ? "is-active" : ""}`}
+              onMouseEnter={() => setActiveIndex(i)}
+              onClick={() => select(r)}
+            >
+              <div className="search-result-row">
+                <span className="search-result-title">{r.episode.title}</span>
+                <span className="search-result-date">{dateRangeLabel(r.episode)}</span>
+              </div>
+              <div className="search-result-meta">
+                <span className="search-result-reason">{reasonLabel(r.reason)}</span>
+              </div>
+            </li>
+          ))}
         </ul>
       )}
     </div>

@@ -1,24 +1,24 @@
-import EventCard from "@/components/EventCard";
+import EpisodeCard from "@/components/EpisodeCard";
 import SearchBar from "@/components/SearchBar";
 import Timeline, { type TimelineItem } from "@/components/Timeline";
-import { formatEventDate } from "@/lib/dates";
-import { loadEventsWithEpisodes } from "@/lib/episodes-loader";
+import { formatYearLabel } from "@/lib/dates";
+import { loadEpisodesForTimeline } from "@/lib/episodes-loader";
 
 // Re-render at most once an hour. The cron route also calls revalidatePath("/")
 // after a sync, so fresh episodes appear without waiting for the timer.
 export const revalidate = 3600;
 
 export default async function Home() {
-  const events = await loadEventsWithEpisodes();
-  const items: TimelineItem[] = events.map((event) => ({
-    id: event.id,
-    dateLabel: formatEventDate(event.year, event.month, event.day),
-    content: <EventCard event={event} />,
+  const episodes = await loadEpisodesForTimeline();
+  const items: TimelineItem[] = episodes.map((ep) => ({
+    id: ep.youtubeId,
+    dateLabel: formatYearLabel(ep.timelineYear),
+    content: <EpisodeCard episode={ep} />,
   }));
 
   return (
     <main className="page">
-      <SearchBar events={events} />
+      <SearchBar episodes={episodes} />
       <Timeline items={items} />
     </main>
   );
