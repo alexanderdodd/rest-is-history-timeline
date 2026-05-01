@@ -1,6 +1,6 @@
 "use client";
 
-import { formatYearLabel } from "@/lib/dates";
+import { formatEventDate, formatYearLabel } from "@/lib/dates";
 import type { PositionedEpisode } from "@/lib/episodes-loader";
 
 function truncate(s: string, max: number): string {
@@ -12,8 +12,14 @@ function truncate(s: string, max: number): string {
 function dateRangeLabel(ep: PositionedEpisode): string {
   const c = ep.covers[0];
   if (!c) return "";
-  if (c.startYear === c.endYear) return formatYearLabel(c.startYear);
-  return `${formatYearLabel(c.startYear)} – ${formatYearLabel(c.endYear)}`;
+  const start = formatEventDate(c.startYear, c.startMonth, c.startDay);
+  const sameYear = c.startYear === c.endYear;
+  const sameDate =
+    sameYear && c.startMonth === c.endMonth && c.startDay === c.endDay;
+  if (sameDate) return start;
+  if (sameYear && !c.endMonth && !c.startMonth) return formatYearLabel(c.startYear);
+  const end = formatEventDate(c.endYear, c.endMonth, c.endDay);
+  return `${start} – ${end}`;
 }
 
 function seriesBadgeText(ep: PositionedEpisode): string | null {

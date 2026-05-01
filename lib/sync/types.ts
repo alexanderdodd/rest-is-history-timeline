@@ -8,6 +8,13 @@ export type Confidence = "high" | "medium" | "low";
 export type CoverRange = {
   startYear: number;
   endYear: number;
+  /** Optional month/day precision when the LLM can extract a specific date
+   *  from the title/description. Used as tiebreakers when sorting episodes
+   *  that share a year. 1-indexed (Jan = 1). Omit when unknown. */
+  startMonth?: number;
+  startDay?: number;
+  endMonth?: number;
+  endDay?: number;
 };
 
 /**

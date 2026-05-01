@@ -81,20 +81,47 @@ export type EpisodeGroup = {
   episodes: PositionedEpisode[];
 };
 
+/** Compare-key for series names — slug-normalised so "The French Revolution"
+ *  and "French Revolution" cluster together. */
+function seriesKey(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/^the\s+/, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/** Optional month/day on the first cover, for sub-year ordering. */
+function precisionScore(ep: PositionedEpisode): number {
+  const c = ep.covers[0];
+  if (!c) return 0;
+  const m = c.startMonth ?? 1;
+  const d = c.startDay ?? 1;
+  return m * 100 + d; // 1xx..12xx; raw ordering only matters for tie-break
+}
+
 /**
- * Sort key for episodes within a year row: series-named episodes cluster by
- * (name, partNumber); standalone episodes (no series) come after, in publish
- * order. Keeps multi-part series readable in narrative order.
+ * Sort key for episodes within a year row:
+ *   1. series-named episodes cluster by (slugified name, partNumber)
+ *   2. standalone episodes (no series) come after, ordered by precise date
+ *      then publish order
+ * Keeps multi-part series readable in narrative order even when they share
+ * a year.
  */
 function withinYearComparator(a: PositionedEpisode, b: PositionedEpisode): number {
   const aSeries = a.series?.name ?? null;
   const bSeries = b.series?.name ?? null;
   if (aSeries && bSeries) {
-    if (aSeries !== bSeries) return aSeries.localeCompare(bSeries);
+    const aKey = seriesKey(aSeries);
+    const bKey = seriesKey(bSeries);
+    if (aKey !== bKey) return aKey.localeCompare(bKey);
     return (a.series!.partNumber ?? 0) - (b.series!.partNumber ?? 0);
   }
   if (aSeries) return -1; // series-named first
   if (bSeries) return 1;
+  const ap = precisionScore(a);
+  const bp = precisionScore(b);
+  if (ap !== bp) return ap - bp;
   return a.publishedAt.localeCompare(b.publishedAt);
 }
 

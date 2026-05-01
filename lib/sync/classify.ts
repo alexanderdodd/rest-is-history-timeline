@@ -16,7 +16,7 @@ import type {
 } from "./types";
 import type { YouTubeVideo } from "./youtube";
 
-export const CLASSIFIER_VERSION = "2026-05-01.v3";
+export const CLASSIFIER_VERSION = "2026-05-01.v4";
 export const CLASSIFIER_MODEL = "anthropic/claude-haiku-4.5";
 
 const SYSTEM_PROMPT = `You categorise episodes of "The Rest Is History" podcast by the historical period(s) they discuss and identify multi-part series membership.
@@ -24,28 +24,38 @@ const SYSTEM_PROMPT = `You categorise episodes of "The Rest Is History" podcast 
 Given a YouTube episode title and description, output a JSON object:
 
 {
-  "covers": [{"startYear": <number>, "endYear": <number>}, ...],
+  "covers": [{"startYear": <number>, "endYear": <number>, "startMonth"?: <1-12>, "startDay"?: <1-31>, "endMonth"?: <1-12>, "endDay"?: <1-31>}, ...],
   "eventIds": [<string>, ...],
   "confidence": "high" | "medium" | "low",
-  "series": { "name": <string>, "partNumber": <number>, "totalParts": <number> } | null
+  "series": { "name": <string>, "partNumber": <number>, "totalParts"?: <number> } | null
 }
 
-Rules:
+COVERS — temporal scope of THIS episode:
 - Years are integers. BC years are NEGATIVE (e.g. 44 BC = -44, 30 AD = 30).
-- "covers" is one or more year ranges THIS SPECIFIC EPISODE is materially about. For a single-topic episode, a tight range like {startYear: 1789, endYear: 1799}. For an episode that bounces across centuries, use multiple ranges.
-- For multi-part series episodes: anchor "covers" to where THIS PART falls in the historical narrative — NOT the broader topic the series covers as a whole. Example: a 5-part series on the French Revolution might have Part 1 covering 1770–1785 (Marie Antoinette's life leading up to the revolution), Part 2 covering 1785–1789 (Diamond Necklace Scandal), Part 3 covering 1789–1791 (Storming of the Bastille). Each part's covers should reflect ITS chronological scope, not the whole revolution.
-- "eventIds" lists ids from the provided event corpus that the episode is closely about. Only include events clearly central to the episode, not loose connections.
-- "confidence":
-  - "high" if the period is unambiguous from the title/description.
-  - "medium" if the period is implied but not explicit, or you're choosing a date range for a thematic figure.
-  - "low" if the episode has no clear historical period.
-- If the episode has no temporal anchor (book launches, hosts' chat, present-day commentary), return covers: [] and confidence: "low".
+- For a single-topic episode, use a tight range. For an episode that bounces across centuries, use multiple ranges.
+- "startMonth"/"startDay"/"endMonth"/"endDay" are OPTIONAL and 1-indexed. Include them when the episode is about a SPECIFIC dated event (e.g. "Storming of the Bastille" → 1789-07-14; "Assassination of Caesar" → -44-03-15). Omit them for broad topical coverage where a specific date is meaningless.
 
-Series detection:
-- Look for "Part 2", "Episode 3", "S02E01", "(Part 4)", "| Part N |", or similar patterns in the title. If the title clearly identifies the episode as part of a multi-part series, set "series".
-- "name" is the canonical series name (e.g. "The French Revolution") with "Part N", "Episode N", "SXXEXX", and other ordinal markers stripped. Be consistent — different parts of the same series should share the same name string. If seasons are clearly distinct narratives, you may include the season (e.g. "The French Revolution Season 2"); otherwise drop the season.
-- "partNumber" is which part this is (1-indexed).
-- "totalParts" is the total in the series if you can infer it (e.g. from "Part 3 of 5" or contextual cues in the description); otherwise omit.
+ANCHOR THE START YEAR TO THE EPISODE'S NARRATIVE — NOT THE BROADER TOPIC:
+- For multi-part series, "covers.startYear" should reflect where THIS PART's narrative actually begins, not the whole series' topic.
+- Background context references don't count. Example: an episode titled "Why Marie Antoinette became hated (Part 1)" should anchor at her arrival in France (1770) or accession as Queen (1774) — NOT her birth in 1755 even if her childhood is mentioned in passing. The episode's main narrative is the events that LED to her being hated, not her cradle.
+- Within a series, Part 1's startYear is usually earlier than later parts'. Don't over-extend Part 1's range backwards into pure backstory.
+
+EVENT IDS:
+- "eventIds" lists ids from the provided event corpus the episode is closely about. Only include events clearly central, not loose connections.
+
+CONFIDENCE:
+- "high" if the period is unambiguous from the title/description.
+- "medium" if the period is implied but not explicit, or you're choosing a date range for a thematic figure.
+- "low" if the episode has no clear historical period.
+- For episodes with no temporal anchor (book launches, hosts' chat, present-day commentary), return covers: [] and confidence: "low".
+
+SERIES DETECTION:
+- Look for "Part 2", "Episode 3", "S02E01", "(Part 4)", "| Part N |", "Season X Episode Y", or similar patterns in the title. If the title clearly identifies the episode as part of a multi-part series, set "series".
+- ALWAYS INCLUDE THE SEASON IN THE SERIES NAME when one is present in the title. "The French Revolution S02E03" → name: "The French Revolution Season 2". "The French Revolution S03E02" → name: "The French Revolution Season 3". A different season is a DIFFERENT SERIES — they should not share a name.
+- For series with only "Part N" (no season), the canonical name is the topic without ordinal markers (e.g. "The French Revolution"). Be consistent across parts — always include or always omit "The". Prefer "The French Revolution" (with "The") if the title uses that form.
+- Strip "Part N", "Episode N", "SXXEXX", "| Part X |" from the name itself.
+- "partNumber" is 1-indexed within the named series. For "S02E03", partNumber is 3 (the episode within season 2).
+- "totalParts" is the total in the series if you can infer it from "of N" or context; otherwise omit.
 - If the episode is a one-off (not part of a series), set "series" to null.
 
 Return ONLY the JSON object, no surrounding text or code fences.`;
@@ -79,6 +89,17 @@ type ClassifierOutput = {
   confidence: Confidence;
   series?: SeriesInfo;
 };
+
+function pickDatePart(
+  raw: unknown,
+  min: number,
+  max: number,
+): number | undefined {
+  if (typeof raw !== "number") return undefined;
+  const n = Math.round(raw);
+  if (n < min || n > max) return undefined;
+  return n;
+}
 
 function parseSeries(raw: unknown): SeriesInfo | undefined {
   if (typeof raw !== "object" || raw === null) return undefined;
@@ -117,13 +138,27 @@ function parseClassifierOutput(text: string): ClassifierOutput {
   const out: ClassifierOutput = {
     covers: covers
       .filter(
-        (c): c is { startYear: number; endYear: number } =>
+        (c): c is Record<string, unknown> =>
           typeof c === "object" &&
           c !== null &&
           typeof (c as Record<string, unknown>).startYear === "number" &&
           typeof (c as Record<string, unknown>).endYear === "number",
       )
-      .map((c) => ({ startYear: c.startYear, endYear: c.endYear })),
+      .map((c) => {
+        const range: CoverRange = {
+          startYear: c.startYear as number,
+          endYear: c.endYear as number,
+        };
+        const sm = pickDatePart(c.startMonth, 1, 12);
+        if (sm !== undefined) range.startMonth = sm;
+        const sd = pickDatePart(c.startDay, 1, 31);
+        if (sd !== undefined) range.startDay = sd;
+        const em = pickDatePart(c.endMonth, 1, 12);
+        if (em !== undefined) range.endMonth = em;
+        const ed = pickDatePart(c.endDay, 1, 31);
+        if (ed !== undefined) range.endDay = ed;
+        return range;
+      }),
     eventIds: eventIds.filter((id): id is string => typeof id === "string"),
     confidence,
   };
