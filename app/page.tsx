@@ -1,6 +1,7 @@
 import EpisodeCard from "@/components/EpisodeCard";
 import EventMarker from "@/components/EventMarker";
 import SearchBar from "@/components/SearchBar";
+import SeriesConnectors from "@/components/SeriesConnectors";
 import Timeline, { type TimelineItem } from "@/components/Timeline";
 import { EVENTS } from "@/lib/data/events";
 import type { HistoricalEvent } from "@/lib/data/types";
@@ -72,7 +73,7 @@ export default async function Home() {
   return (
     <main className="page">
       <SearchBar episodes={episodes} />
-      <Timeline items={items} />
+      <Timeline items={items} overlay={<SeriesConnectors />} />
     </main>
   );
 }

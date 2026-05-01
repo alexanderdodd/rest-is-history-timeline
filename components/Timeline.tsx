@@ -22,11 +22,22 @@ export type TimelineItem = {
  * of events, episodes, or any specific content domain. Callers compose it
  * with a `TimelineItem[]` whose `content` is whatever they want to render
  * inside each card.
+ *
+ * `overlay` is an optional slot rendered as an absolutely-positioned child
+ * of the timeline (e.g. an SVG layer drawing series connectors). The
+ * timeline doesn't know what it is; it just makes room for it.
  */
-export default function Timeline({ items }: { items: TimelineItem[] }) {
+export default function Timeline({
+  items,
+  overlay,
+}: {
+  items: TimelineItem[];
+  overlay?: ReactNode;
+}) {
   return (
     <div className="ct-timeline">
       <div className="ct-spine" aria-hidden="true" />
+      {overlay}
       {items.map((item, i) => {
         const side = i % 2 === 0 ? "left" : "right";
         return (

@@ -24,6 +24,14 @@ function seriesBadgeText(ep: PositionedEpisode): string | null {
     : `${name} · Part ${partNumber}`;
 }
 
+/** URL-safe stable id for a series name — used for SVG connector grouping. */
+export function seriesSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 /**
  * Card content for a single classified episode plotted on the timeline.
  *
@@ -44,7 +52,9 @@ export default function EpisodeCard({
   return (
     <article
       data-timeline-id={episode.youtubeId}
-      className={`ct-card${compact ? " ct-card-compact" : ""}`}
+      data-series-id={episode.series ? seriesSlug(episode.series.name) : undefined}
+      data-series-part={episode.series ? episode.series.partNumber : undefined}
+      className={`ct-card${compact ? " ct-card-compact" : ""}${episode.series ? " ct-card-in-series" : ""}`}
     >
       {episode.thumbnailUrl && (
         <a
