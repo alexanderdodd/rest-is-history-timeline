@@ -4,7 +4,8 @@ The single-page, vertically-alternating timeline that anchors this app. Hand-rol
 
 ## What it does
 - Renders **every classified podcast episode** (~400+) as its own card on the timeline, plotted at the **start year of the episode's first covers range** so you can scroll through history and see the show's coverage of each period.
-- Episodes alternate left/right of a central spine; the page scrolls top-to-bottom from oldest covered period to most recent.
+- **Episodes that share a start year are grouped onto one row** — the year label appears once, and all episodes for that year stack on the same side of the spine. When a group has more than one episode, the cards switch to a compact horizontal layout (small thumbnail beside title + date) to save vertical space.
+- Group rows alternate left/right of a central spine by group index; the page scrolls top-to-bottom from oldest covered period to most recent.
 - Each card shows the episode's YouTube thumbnail, title (linked to YouTube), the date range it covers, and a short summary truncated from the YouTube description.
 - The thumbnail and title both link straight to the episode on YouTube. Single-click, opens in a new tab.
 - Date label next to the spine shows the start year, alternating opposite to the card.
@@ -16,12 +17,13 @@ The whole point of this app is "scrub to a period and see the show's episodes ab
 
 ## How it works
 - **Architecture is split deliberately** into presentation and content:
-  - `components/Timeline.tsx` is **content-agnostic**. It exports a `TimelineItem` type (`{ id, dateLabel, content }`) and renders the spine, dots, dates, and alternating card slots. It knows nothing about episodes.
-  - `components/EpisodeCard.tsx` is the content for our domain — given a `PositionedEpisode`, it renders the cover thumbnail, title, date range, and summary. Pure card content.
-  - `app/page.tsx` composes them: maps `episodes` → `TimelineItem[]` with `content: <EpisodeCard episode={ep} />`.
+  - `components/Timeline.tsx` is **content-agnostic**. It exports a `TimelineItem` type (`{ id, dateLabel, content }`) and renders the spine, dots, dates, and alternating card slots. It doesn't know about episodes, doesn't render `.ct-card` itself, and doesn't put `data-timeline-id` on the row — the content is responsible for its own card markup.
+  - `components/EpisodeCard.tsx` owns the `<article class="ct-card">` wrapper plus its own `data-timeline-id` (the episode's `youtubeId`), so search-bar jumps land on the specific episode rather than the year row. Has a `compact` prop for the horizontal mini-card layout.
+  - `app/page.tsx` composes them: groups episodes by `timelineYear`, maps each `EpisodeGroup` → `TimelineItem`, and passes a `<div class="ct-episode-stack">` of `<EpisodeCard compact={group.episodes.length > 1}>` as `content`.
 - **Position rule**: `lib/episodes-loader.ts` `timelinePosition()` returns `episode.covers[0].startYear`. We anchor at the start of the covered period (rather than the midpoint) because it's usually closer to "what the episode opens on" and dodges the broad-range midpoint-junk problem (an episode covering 1500–2000 would otherwise plot at 1750).
+- **Grouping rule**: `groupEpisodesByYear` buckets episodes by `timelineYear`. One row per bucket, side picked by group index. Episodes with empty `covers` don't get bucketed at all (they're filtered upstream).
 - **No-anchor episodes are excluded**: episodes with empty `covers` (the classifier's "no temporal anchor" verdict, e.g. host chat / methodology episodes) don't appear on the timeline.
-- **Sort**: by `timelineYear` ascending, with `publishedAt` as a stable secondary key so multi-part series at the same year read in publish order.
+- **Sort**: groups by `year` ascending; within a group, episodes by `publishedAt` so multi-part series at the same year read in publish order.
 - Layout is a 3-column CSS grid per row (`1fr 96px 1fr`). The card slot lands in column 1 or 3 depending on whether the row is `ct-left` or `ct-right` (decided by index parity in the Timeline component). The marker column hosts the dot and the date label, with the date absolutely positioned so it sits opposite the card.
 - Each row carries `data-timeline-id={item.id}` so external code (the search bar) can locate it via `querySelector` and `scrollIntoView`. The Timeline doesn't know what the id means; we happen to use the `youtubeId` of each episode.
 - BC dates are stored as negative `year` numbers in covers; `lib/dates.ts` formats them ("3000 BC", "AD 800", "1789") and the formatted string is passed to the Timeline as `dateLabel` — the Timeline never parses it.

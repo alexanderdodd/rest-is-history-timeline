@@ -18,13 +18,26 @@ function dateRangeLabel(ep: PositionedEpisode): string {
 
 /**
  * Card content for a single classified episode plotted on the timeline.
- * Pure content — knows nothing about the timeline structure (Timeline.tsx
- * owns layout). Same shape as EventCard so swapping content types later is
- * cheap.
+ *
+ * Owns its own `<article class="ct-card">` wrapper plus a `data-timeline-id`
+ * — so the Timeline component can stay content-agnostic and so the search
+ * bar can jump to a specific episode (not just the year row).
+ *
+ * `compact` switches to a horizontal mini-card layout used when several
+ * episodes share the same year and we want to save vertical space.
  */
-export default function EpisodeCard({ episode }: { episode: PositionedEpisode }) {
+export default function EpisodeCard({
+  episode,
+  compact = false,
+}: {
+  episode: PositionedEpisode;
+  compact?: boolean;
+}) {
   return (
-    <>
+    <article
+      data-timeline-id={episode.youtubeId}
+      className={`ct-card${compact ? " ct-card-compact" : ""}`}
+    >
       {episode.thumbnailUrl && (
         <a
           href={episode.url}
@@ -51,10 +64,10 @@ export default function EpisodeCard({ episode }: { episode: PositionedEpisode })
         <p className="ct-event-meta">
           <span className="ct-event-era">{dateRangeLabel(episode)}</span>
         </p>
-        {episode.description && (
+        {!compact && episode.description && (
           <p className="ct-event-desc">{truncate(episode.description, 240)}</p>
         )}
       </div>
-    </>
+    </article>
   );
 }

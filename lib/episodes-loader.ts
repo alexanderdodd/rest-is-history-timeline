@@ -73,3 +73,33 @@ export async function loadEpisodesForTimeline(): Promise<PositionedEpisode[]> {
   const index = await loadEpisodeIndex();
   return positionEpisodes(index);
 }
+
+export type EpisodeGroup = {
+  /** The shared timeline year for every episode in this group. */
+  year: number;
+  /** Episodes plotted at this year, ordered by publish date. */
+  episodes: PositionedEpisode[];
+};
+
+/**
+ * Group positioned episodes by timelineYear. The timeline renders one row
+ * per group (year label appears once) with multiple cards stacked when the
+ * group has more than one episode.
+ */
+export function groupEpisodesByYear(
+  episodes: PositionedEpisode[],
+): EpisodeGroup[] {
+  const buckets = new Map<number, PositionedEpisode[]>();
+  for (const ep of episodes) {
+    const arr = buckets.get(ep.timelineYear);
+    if (arr) arr.push(ep);
+    else buckets.set(ep.timelineYear, [ep]);
+  }
+  return [...buckets.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([year, eps]) => ({ year, episodes: eps }));
+}
+
+export async function loadEpisodeGroupsForTimeline(): Promise<EpisodeGroup[]> {
+  return groupEpisodesByYear(await loadEpisodesForTimeline());
+}

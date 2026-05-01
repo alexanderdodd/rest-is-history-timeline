@@ -28,14 +28,11 @@ export default function Timeline({ items }: { items: TimelineItem[] }) {
       {items.map((item, i) => {
         const side = i % 2 === 0 ? "left" : "right";
         return (
-          <div
-            key={item.id}
-            data-timeline-id={item.id}
-            className={`ct-row ct-${side}`}
-          >
-            <div className="ct-card-slot">
-              <div className="ct-card">{item.content}</div>
-            </div>
+          <div key={item.id} className={`ct-row ct-${side}`}>
+            {/* The card slot is just a positional wrapper. The content owns
+                its own card markup and `data-timeline-id` — so groups can
+                stack multiple cards in one row without sharing an id. */}
+            <div className="ct-card-slot">{item.content}</div>
             <div className="ct-marker">
               <div className="ct-marker-dot" aria-hidden="true" />
               <div className="ct-marker-date">{item.dateLabel}</div>
