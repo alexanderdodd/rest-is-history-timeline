@@ -290,6 +290,9 @@ body {
 .ct-card-compact .ct-card-body {
   padding: 0;
   gap: 0.25rem;
+  /* Without this the grid item refuses to shrink below the title's
+     intrinsic width and the title overflows the card to the right. */
+  min-width: 0;
 }
 .ct-card-compact .ct-event-title {
   font-size: 0.95rem;
@@ -328,11 +331,12 @@ body {
 }
 .ct-card-compact:hover {
   z-index: 5;
-  border-color: var(--border-strong);
+  border-color: var(--accent);
   box-shadow:
-    0 32px 80px -28px rgba(0, 0, 0, 0.85),
-    0 1px 0 rgba(255, 255, 255, 0.04) inset;
-  transform: scale(1.06);
+    0 50px 110px -28px rgba(0, 0, 0, 0.95),
+    0 0 0 1px rgba(212, 168, 90, 0.25),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset;
+  transform: scale(1.14);
 }
 .ct-card-compact:hover .ct-event-desc {
   max-height: 240px;
