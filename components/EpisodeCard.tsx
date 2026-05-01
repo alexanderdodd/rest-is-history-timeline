@@ -16,6 +16,14 @@ function dateRangeLabel(ep: PositionedEpisode): string {
   return `${formatYearLabel(c.startYear)} – ${formatYearLabel(c.endYear)}`;
 }
 
+function seriesBadgeText(ep: PositionedEpisode): string | null {
+  if (!ep.series) return null;
+  const { name, partNumber, totalParts } = ep.series;
+  return totalParts
+    ? `${name} · Part ${partNumber} of ${totalParts}`
+    : `${name} · Part ${partNumber}`;
+}
+
 /**
  * Card content for a single classified episode plotted on the timeline.
  *
@@ -51,6 +59,9 @@ export default function EpisodeCard({
         </a>
       )}
       <div className="ct-card-body">
+        {seriesBadgeText(episode) && (
+          <p className="ct-series-badge">{seriesBadgeText(episode)}</p>
+        )}
         <h3 className="ct-event-title">
           <a
             href={episode.url}

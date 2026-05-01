@@ -10,6 +10,17 @@ export type CoverRange = {
   endYear: number;
 };
 
+/**
+ * When an episode is part of a multi-part series (e.g. "The French Revolution
+ * | Part 2 | The Diamond Necklace Scandal"), the classifier extracts the
+ * series identity here. partNumber is 1-indexed; totalParts is best-effort.
+ */
+export type SeriesInfo = {
+  name: string;
+  partNumber: number;
+  totalParts?: number;
+};
+
 export type ClassifiedEpisode = {
   /** YouTube video id — also our canonical id. */
   youtubeId: string;
@@ -29,6 +40,8 @@ export type ClassifiedEpisode = {
   classifierVersion: string;
   /** ISO timestamp the episode was classified. Useful for cache invalidation. */
   classifiedAt: string;
+  /** Series membership, when the LLM identifies this as part of a series. */
+  series?: SeriesInfo;
   /**
    * True when classification fell back to the safe default (covers: [],
    * confidence: "low") because all attempts threw. The orchestrator uses this

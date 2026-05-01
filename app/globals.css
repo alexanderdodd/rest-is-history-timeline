@@ -372,6 +372,27 @@ a.ct-cover:hover img { filter: brightness(1.08); }
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
+
+/* Series badge — appears above the episode title when the episode is part
+   of a multi-part series ("The French Revolution · Part 2 of 5"). */
+.ct-series-badge {
+  margin: 0 0 0.1rem;
+  align-self: flex-start;
+  display: inline-block;
+  padding: 0.18rem 0.5rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 4px;
+  line-height: 1.2;
+}
+.ct-card-compact .ct-series-badge {
+  font-size: 0.58rem;
+  padding: 0.12rem 0.4rem;
+}
 .ct-event-era { color: var(--accent); }
 .ct-dot-sep { color: var(--text-faint); font-weight: 400; }
 .ct-event-meta > span:nth-child(3) { color: var(--text-dim); }

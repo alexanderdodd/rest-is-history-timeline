@@ -82,9 +82,27 @@ export type EpisodeGroup = {
 };
 
 /**
+ * Sort key for episodes within a year row: series-named episodes cluster by
+ * (name, partNumber); standalone episodes (no series) come after, in publish
+ * order. Keeps multi-part series readable in narrative order.
+ */
+function withinYearComparator(a: PositionedEpisode, b: PositionedEpisode): number {
+  const aSeries = a.series?.name ?? null;
+  const bSeries = b.series?.name ?? null;
+  if (aSeries && bSeries) {
+    if (aSeries !== bSeries) return aSeries.localeCompare(bSeries);
+    return (a.series!.partNumber ?? 0) - (b.series!.partNumber ?? 0);
+  }
+  if (aSeries) return -1; // series-named first
+  if (bSeries) return 1;
+  return a.publishedAt.localeCompare(b.publishedAt);
+}
+
+/**
  * Group positioned episodes by timelineYear. The timeline renders one row
  * per group (year label appears once) with multiple cards stacked when the
- * group has more than one episode.
+ * group has more than one episode. Within a group, series parts read in
+ * order before standalone episodes.
  */
 export function groupEpisodesByYear(
   episodes: PositionedEpisode[],
@@ -97,7 +115,10 @@ export function groupEpisodesByYear(
   }
   return [...buckets.entries()]
     .sort(([a], [b]) => a - b)
-    .map(([year, eps]) => ({ year, episodes: eps }));
+    .map(([year, eps]) => ({
+      year,
+      episodes: eps.slice().sort(withinYearComparator),
+    }));
 }
 
 export async function loadEpisodeGroupsForTimeline(): Promise<EpisodeGroup[]> {
