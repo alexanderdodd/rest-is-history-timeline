@@ -1,3 +1,4 @@
+import SearchBar from "@/components/SearchBar";
 import Timeline from "@/components/Timeline";
 import { loadEventsWithEpisodes } from "@/lib/episodes-loader";
 
@@ -9,6 +10,7 @@ export default async function Home() {
   const events = await loadEventsWithEpisodes();
   return (
     <main className="page">
+      <SearchBar events={events} />
       <Timeline events={events} />
     </main>
   );

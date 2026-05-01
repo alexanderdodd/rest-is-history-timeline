@@ -85,3 +85,4 @@ Every feature in this repo must have a corresponding markdown file at `features/
 Existing feature docs:
 - `features/timeline.md` — the core timeline.
 - `features/episode-sync.md` — the YouTube → LLM → Blob preprocessing pipeline + Vercel cron that keeps it current.
+- `features/search.md` — docked sticky search bar (year or event-name → scroll-to-card).
