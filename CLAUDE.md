@@ -55,13 +55,22 @@ The `next-env.d.ts` and `tsconfig.json` files are partially managed by `next bui
 
 ## Standing rules
 
-### Commit and push after every logical change — do NOT batch
+### Commit and push after every logical change — do NOT batch (this is the most important rule in this file)
 
-After **each** coherent change — a single feature, a single bug fix, a single refactor — commit it and push to `origin/main` immediately. Do **not** roll multiple unrelated changes into one commit, even if they happen in the same turn. If a turn includes three distinct fixes, that's three commits + three pushes. The user has explicitly requested this granularity; the previous "one commit per turn" rule was wrong and is replaced by this one.
+The user has stated this rule loudly and repeatedly. **Treat every coherent change as a commit-and-push unit and ship it before moving on.** Do not save up multiple changes "to commit at the end." Do not finish one change, start the next, and commit them together later. The expected pattern is:
 
-- Push immediately after each commit (Vercel watches the repo).
+1. Make the change.
+2. Typecheck / build to confirm it doesn't break anything.
+3. **`git add` the specific files for that change → `git commit` → `git push origin main`.**
+4. Only then start the next change.
+
+If a single user message spawns three independent fixes, that's three commits and three pushes. If you find yourself thinking "I'll commit this with the next thing," **stop and commit now**. Vercel watches `main`, the user iterates by reloading the deployed page, and untracked work is deploy-invisible.
+
+Other rules:
 - Commit messages follow the existing repo style (subject under 72 chars, body explains the *why*).
-- Same git safety rules: no `--force`, no `--no-verify`, don't commit secrets, no `git add -A` blindly.
+- Stage by name (`git add <files>`), never `git add -A` blindly.
+- No `--force`, no `--no-verify`, no committing secrets.
+- Don't lump unrelated edits into one commit just because they ended up uncommitted at the same moment — split them.
 
 ### Feature documentation convention (HARD RULE)
 
