@@ -31,17 +31,13 @@ function seriesBadgeText(ep: PositionedEpisode): string | null {
   return `${topic}: Series ${seriesNumber} - ${partLabel}`;
 }
 
-/** URL-safe slug of a string — used for the topic component of series ids. */
+/** URL-safe slug of a string — kept for any consumer that still wants a
+ *  slugified topic (the loader already does production clustering). */
 export function seriesSlug(name: string): string {
   return name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
-}
-
-/** Stable id for a specific (topic, seriesNumber) pair — drives connector grouping. */
-function seriesIdFor(series: { topic: string; seriesNumber: number }): string {
-  return `${seriesSlug(series.topic)}-s${series.seriesNumber}`;
 }
 
 /**
@@ -64,7 +60,7 @@ export default function EpisodeCard({
   return (
     <article
       data-timeline-id={episode.youtubeId}
-      data-series-id={episode.series ? seriesIdFor(episode.series) : undefined}
+      data-series-id={episode.series ? episode.productionId : undefined}
       data-series-part={episode.series ? episode.series.partNumber : undefined}
       className={`ct-card${compact ? " ct-card-compact" : ""}${episode.series ? " ct-card-in-series" : ""}`}
     >

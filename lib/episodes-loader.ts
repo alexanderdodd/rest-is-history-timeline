@@ -17,6 +17,20 @@ export type PositionedEpisode = ClassifiedEpisode & {
   /** Year on the historical timeline this episode is plotted at — the
    * midpoint of the first cover range. */
   timelineYear: number;
+  /**
+   * Stable id grouping this episode with other parts of the SAME production.
+   *
+   * The classifier emits `(topic, seriesNumber)` based purely on title text,
+   * which can't disambiguate two distinct productions of the same show that
+   * both happen to be called e.g. "The French Revolution Series 1" — the
+   * older 5-part series from 2022 and the newer 7-part Goalhanger series
+   * both end up there. We disambiguate at load-time by clustering on
+   * publishedAt: episodes claiming the same `(topic, seriesNumber)` but
+   * published more than a few months apart are treated as separate
+   * productions and get distinct productionIds. Standalone episodes (no
+   * series) get their youtubeId as their productionId so they never group.
+   */
+  productionId: string;
 };
 
 export async function loadEpisodeIndex(): Promise<EpisodeIndex | null> {
@@ -45,6 +59,54 @@ function timelinePosition(ep: ClassifiedEpisode): number | null {
   return ep.covers[0].startYear;
 }
 
+/** Compare-key for a topic — slug-normalised so "The French Revolution"
+ *  and "French Revolution" cluster together. */
+function topicKey(topic: string): string {
+  return topic
+    .toLowerCase()
+    .replace(/^the\s+/, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/**
+ * Walk every episode that claims a series, group by `(topic, seriesNumber)`,
+ * sort each group by publishedAt, and split into separate "production"
+ * clusters wherever consecutive parts have a publish gap larger than the
+ * threshold. Two parts of the same actual show production are typically
+ * released a few weeks apart; a gap of months almost always means a
+ * different production happens to share the show name.
+ */
+const PRODUCTION_GAP_DAYS = 120;
+const PRODUCTION_GAP_MS = PRODUCTION_GAP_DAYS * 24 * 60 * 60 * 1000;
+
+function buildProductionMap(
+  episodes: ClassifiedEpisode[],
+): Map<string, string> {
+  const groups = new Map<string, ClassifiedEpisode[]>();
+  for (const ep of episodes) {
+    if (!ep.series) continue;
+    const key = `${topicKey(ep.series.topic)}-s${ep.series.seriesNumber}`;
+    const arr = groups.get(key);
+    if (arr) arr.push(ep);
+    else groups.set(key, [ep]);
+  }
+
+  const out = new Map<string, string>();
+  for (const [groupKey, group] of groups) {
+    group.sort((a, b) => a.publishedAt.localeCompare(b.publishedAt));
+    let cluster = 0;
+    let prevTime: number | null = null;
+    for (const ep of group) {
+      const t = new Date(ep.publishedAt).getTime();
+      if (prevTime !== null && t - prevTime > PRODUCTION_GAP_MS) cluster++;
+      prevTime = t;
+      out.set(ep.youtubeId, `${groupKey}-p${cluster}`);
+    }
+  }
+  return out;
+}
+
 /**
  * Episodes positioned chronologically by what they're *about* (oldest first).
  * Episodes with no temporal anchor (covers: []) are excluded — they don't
@@ -54,11 +116,13 @@ export function positionEpisodes(
   index: EpisodeIndex | null,
 ): PositionedEpisode[] {
   if (!index) return [];
+  const productionIds = buildProductionMap(index.episodes);
   const out: PositionedEpisode[] = [];
   for (const ep of index.episodes) {
     const year = timelinePosition(ep);
     if (year === null) continue;
-    out.push({ ...ep, timelineYear: year });
+    const productionId = productionIds.get(ep.youtubeId) ?? ep.youtubeId;
+    out.push({ ...ep, timelineYear: year, productionId });
   }
   // Stable secondary sort by publishedAt so co-located episodes from the
   // same series read in publish order.
@@ -81,16 +145,6 @@ export type EpisodeGroup = {
   episodes: PositionedEpisode[];
 };
 
-/** Compare-key for a topic — slug-normalised so "The French Revolution"
- *  and "French Revolution" cluster together. */
-function topicKey(topic: string): string {
-  return topic
-    .toLowerCase()
-    .replace(/^the\s+/, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
 /** Optional month/day on the first cover, for sub-year ordering. */
 function precisionScore(ep: PositionedEpisode): number {
   const c = ep.covers[0];
@@ -102,20 +156,18 @@ function precisionScore(ep: PositionedEpisode): number {
 
 /**
  * Sort key for episodes within a year row:
- *   1. series episodes cluster by topic, then seriesNumber, then partNumber
- *      — so "Series 1 - Part 1, 2, 3" reads cleanly before "Series 2 - Part 1, 2"
+ *   1. series episodes cluster by productionId (topic + seriesNumber +
+ *      publishedAt-cluster), then partNumber — so two distinct productions
+ *      that both happen to be called "FR Series 1" don't fight over slots.
  *   2. standalone episodes (no series) come after, ordered by precise date
- *      then publish order
+ *      then publish order.
  */
 function withinYearComparator(a: PositionedEpisode, b: PositionedEpisode): number {
   const aSeries = a.series ?? null;
   const bSeries = b.series ?? null;
   if (aSeries && bSeries) {
-    const aKey = topicKey(aSeries.topic);
-    const bKey = topicKey(bSeries.topic);
-    if (aKey !== bKey) return aKey.localeCompare(bKey);
-    if (aSeries.seriesNumber !== bSeries.seriesNumber) {
-      return aSeries.seriesNumber - bSeries.seriesNumber;
+    if (a.productionId !== b.productionId) {
+      return a.productionId.localeCompare(b.productionId);
     }
     return (aSeries.partNumber ?? 0) - (bSeries.partNumber ?? 0);
   }
