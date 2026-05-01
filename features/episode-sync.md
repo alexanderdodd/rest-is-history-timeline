@@ -8,11 +8,11 @@ Catalogues YouTube episodes of *The Rest Is History*, classifies what historical
 - For each new episode, asks an LLM to classify which historical period(s) it discusses and which of our curated events from `lib/data/events.ts` it's materially about.
 - Writes the resulting index to **Vercel Blob** (`episodes/index.json`, public-read).
 - The Next.js page reads that index server-side, joins it onto our event list, and assigns the highest-confidence episode's YouTube thumbnail as the event's cover image.
-- Keeps itself up to date via a **weekly Vercel cron** (`Mon 06:00 UTC`) — only newly seen videos are re-classified.
+- Keeps itself up to date via a **monthly Vercel cron** (`1st of each month, 06:00 UTC`) — only newly seen videos are re-classified.
 - A human-edited `data/episode-overrides.json` wins over the LLM's output for any video, including a `"skip": true` to remove an episode entirely.
 
 ## Why
-Without this, the timeline is just a static "facts you already know" page. The whole point is being able to scrub to a period and see *which episodes the show actually has on it* — including the YouTube thumbnail as a visual anchor. Doing this preprocessing keeps the page render fast (no API calls at request time) and the classifier costs predictable (~$1 for the full backfill; near-zero for weekly increments).
+Without this, the timeline is just a static "facts you already know" page. The whole point is being able to scrub to a period and see *which episodes the show actually has on it* — including the YouTube thumbnail as a visual anchor. Doing this preprocessing keeps the page render fast (no API calls at request time) and the classifier costs predictable (~$1 for the full backfill; near-zero for monthly increments).
 
 ## How it works
 
@@ -29,7 +29,7 @@ Without this, the timeline is just a static "facts you already know" page. The w
 
 ### Where it runs
 - **Local backfill**: `npm run sync-episodes`. Loads `.env.local`, runs the orchestrator with progress logging. **Run this once** for the initial ~600-episode backfill — it would never finish inside Vercel's cron timeout.
-- **Weekly cron**: `app/api/sync-episodes/route.ts`, scheduled by `vercel.json`. Auth-gated by `CRON_SECRET` (Vercel injects this automatically when a `crons` entry exists). Typical run classifies 1–3 new episodes.
+- **Monthly cron**: `app/api/sync-episodes/route.ts`, scheduled by `vercel.json` (`0 6 1 * *` — 06:00 UTC on the 1st of every month). Auth-gated by `CRON_SECRET` (Vercel injects this automatically when a `crons` entry exists). Typical run classifies 4–12 new episodes — well within Pro's 300s cap at 4-way concurrency.
 
 ### Page consumption
 - `lib/episodes-loader.ts` is a `server-only` module that lists the Blob, fetches the JSON with `next: { revalidate: 3600 }`, and joins episodes onto events via `attachEpisodes`. Match priority: explicit `eventIds` → `covers` range containing the year. Among matches: confidence > explicitness > recency.
@@ -53,7 +53,7 @@ Without this, the timeline is just a static "facts you already know" page. The w
   - Within-year sort key now keys on `(topicSlug, seriesNumber, partNumber)` so multi-season clusters land in the right narrative order.
 - **Per-part anchoring within broad series** (added `2026-05-01.v6`): v4–v5 already told the LLM to anchor each part at its own narrative, but it kept collapsing parts of decade-spanning series ("The 1970s", "The Wars of the Roses") to the series' start year — every part of "The 1970s" landed at 1970 regardless of subject. v6 adds a Wilson-resignation worked example to the prompt ("The Most Mysterious Resignation in British History | The 1970s EP 3" → anchor 1976, not 1970), an explicit "the SERIES SPAN is NEVER a substitute for the part's narrative" rule, and a "different parts typically have different startYears — if every part lands at the same year, you're using the series span and that's wrong" sanity check. Also nudges the LLM toward TIGHT covers ranges (1–3 years for a single-event episode) instead of spanning the whole series period.
 - **Topic-name normalisation in sort**: `episodes-loader.ts` uses a slugified comparison key when grouping series within a year, so "The French Revolution" and "French Revolution" cluster together regardless of LLM consistency.
-- **Initial backfill must be local**: Vercel cron caps at 60s (Hobby) / 300s (Pro). Even at 4-way concurrency, ~600 LLM calls don't fit. The cron route is built for the steady state (1–3 new episodes/week) and should rarely break a few seconds.
+- **Initial backfill must be local**: Vercel cron caps at 60s (Hobby) / 300s (Pro). Even at 4-way concurrency, ~600 LLM calls don't fit. The cron route is built for the steady state (4–12 new episodes/month — at ~2-3s per LLM call with 4-way concurrency, well under the 300s ceiling).
 - **`addRandomSuffix: false` + `allowOverwrite: true`** on the Blob put — gives a stable URL across syncs so callers can cache it predictably. We still go via `list()` first because we don't know the public URL prefix until the first sync.
 - **Description is truncated to 1500 chars** for the classifier and 500 chars in the persisted index. Most YouTube descriptions are boilerplate after the first paragraph (sponsor reads, signup links, social handles) — more bytes don't help classification.
 - **`@vercel/blob`'s `list()` requires `BLOB_READ_WRITE_TOKEN`** even for public-read blobs. The page's loader returns `null` if the token is missing rather than crashing — useful for fresh local dev before the user has provisioned Blob.

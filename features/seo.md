@@ -7,7 +7,7 @@ Search-engine and social-share metadata for the timeline. The site is a single p
 - Page metadata: title (with template), description, keywords, canonical, Open Graph, Twitter Card, robots/googleBot directives, themeColor, lang.
 - Auto-generated 1200×630 OpenGraph/Twitter image at `/opengraph-image` (Next file convention picks it up and wires it into the page's `og:image` and `twitter:image`).
 - `/robots.txt` allowing all crawlers, with a `Sitemap:` pointer.
-- `/sitemap.xml` with one entry (the home page) and a weekly `changeFrequency` matching the cron sync cadence.
+- `/sitemap.xml` with one entry (the home page) and a monthly `changeFrequency` matching the cron sync cadence.
 - JSON-LD structured data injected into the page:
   - `WebSite` schema describing the site and its `about` (the podcast).
   - `ItemList` of curated historical events, each emitted as `Event` items with `startDate` (BC dates use the ISO `-YYYY` format).

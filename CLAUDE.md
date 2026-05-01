@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A single-page web app that renders a visual, scrubbable timeline of human history (3000 BC → present), styled magazine-infographic. Episodes from *The Rest Is History* podcast are overlaid onto the timeline so that scrubbing to a period surfaces the relevant episodes (with their YouTube thumbnails as cover images). The episode index is built by a preprocessing pipeline (YouTube Data API → LLM classifier → Vercel Blob) and refreshed weekly by a Vercel cron — see `features/episode-sync.md`.
+A single-page web app that renders a visual, scrubbable timeline of human history (3000 BC → present), styled magazine-infographic. Episodes from *The Rest Is History* podcast are overlaid onto the timeline so that scrubbing to a period surfaces the relevant episodes (with their YouTube thumbnails as cover images). The episode index is built by a preprocessing pipeline (YouTube Data API → LLM classifier → Vercel Blob) and refreshed monthly by a Vercel cron — see `features/episode-sync.md`.
 
 Deploy target: **Vercel**.
 
@@ -23,7 +23,7 @@ Why this stack: the user wants Vercel deployment (Next.js native), a visually ri
 - `npm run start` — serve the production build locally.
 - `npm run typecheck` — `tsc --noEmit`.
 - `npm run lint` — `next lint`.
-- `npm run sync-episodes` — local CLI that runs the episode-sync pipeline (fetch YouTube → classify via Haiku → write to Vercel Blob). Use `--limit N` to smoke-test on the first N new videos. Run for the initial backfill; after that the Vercel cron handles weekly increments.
+- `npm run sync-episodes` — local CLI that runs the episode-sync pipeline (fetch YouTube → classify via Haiku → write to Vercel Blob). Use `--limit N` to smoke-test on the first N new videos. Run for the initial backfill; after that the Vercel cron handles monthly increments.
 
 There is no test suite yet. If one is added, document the runner here.
 
@@ -31,7 +31,7 @@ There is no test suite yet. If one is added, document the runner here.
 
 - `app/layout.tsx` — root HTML shell; loads Inter + Fraunces from Google Fonts and an inline-SVG favicon. Renders `{children}` only — no header/nav/footer.
 - `app/page.tsx` — server component, calls `loadEventsWithEpisodes()` and renders `<Timeline events={...} />`. ISR (`revalidate = 3600`) plus on-demand revalidation from the cron.
-- `app/api/sync-episodes/route.ts` — Vercel cron entrypoint, weekly. Auth-gated by `CRON_SECRET`. Calls the orchestrator and `revalidatePath("/")`.
+- `app/api/sync-episodes/route.ts` — Vercel cron entrypoint, monthly. Auth-gated by `CRON_SECRET`. Calls the orchestrator and `revalidatePath("/")`.
 - `app/globals.css` — dark theme tokens (CSS variables), page-level layout, and **all `react-chrono` style overrides** (selector-based, including some `[class*="..."]` matchers because react-chrono uses styled-components with hashed class names).
 - `components/Timeline.tsx` — `"use client"` wrapper around `react-chrono`'s `Chrono`. Takes `EventWithEpisodes[]`, maps to `TimelineItemModel`. **All card-shape decisions happen here.** Cover image is `event.imageUrl ?? primaryEpisode.thumbnailUrl`; the card's `url` links to the primary episode.
 - `lib/data/types.ts` — shared types (`HistoricalEvent`, `Era`).
@@ -47,7 +47,7 @@ There is no test suite yet. If one is added, document the runner here.
 - `scripts/sync-episodes.ts` — local CLI for the one-time backfill and prompt iteration.
 - `lib/dates.ts` — BC/AD-aware date helpers. **All date construction goes through `dateForYear()`** because `new Date(year, ...)` adds 1900 to year arguments 0–99. `formatYearLabel` (`3000 BC` / `AD 800` / `1789`) and `formatEventDate` are used to render the title strings on each timeline item.
 - `data/episode-overrides.json` — human override layer keyed by `youtubeId`; wins over the LLM. Set `{ "skip": true }` to drop an episode.
-- `vercel.json` — cron schedule (Mon 06:00 UTC).
+- `vercel.json` — cron schedule (1st of each month, 06:00 UTC).
 - `types/react-chrono.d.ts` — module shim. `react-chrono` v2 ships its types at `dist/react-chrono.d.ts` but its `package.json` points `types` at the non-existent `dist/index.d.ts`. Until upstream fixes that, this shim exists.
 - `next.config.mjs` — `images.remotePatterns` allows `i.ytimg.com` / `img.youtube.com` for YouTube thumbnails.
 

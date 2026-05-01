@@ -5,10 +5,11 @@ export const runtime = "nodejs";
 export const maxDuration = 300;
 
 /**
- * Vercel cron entrypoint. Runs the sync orchestrator on the weekly schedule
+ * Vercel cron entrypoint. Runs the sync orchestrator on the monthly schedule
  * defined in vercel.json. The expectation is that the initial backfill has
- * already happened locally — this handler should only need to classify
- * 1-3 new episodes per run.
+ * already happened locally — this handler should only need to classify the
+ * handful of episodes published since the previous monthly run (typically
+ * 4-12). At 4-way concurrency this fits comfortably inside Pro's 300s cap.
  *
  * Vercel passes a Bearer token equal to CRON_SECRET on cron-triggered calls;
  * we reject anything else so the route can't be invoked publicly.
