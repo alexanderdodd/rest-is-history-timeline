@@ -9,9 +9,9 @@ import type { ClassifiedEpisode } from "@/lib/sync/types";
 
 type ChronoItem = {
   title: string;
+  // Kept only as a fallback if react-chrono ever decides not to render
+  // children for some item — the real card body is the EventCard.
   cardTitle: string;
-  cardSubtitle?: string;
-  url?: string;
   media?: {
     type: "IMAGE";
     source: { url: string };
@@ -20,20 +20,11 @@ type ChronoItem = {
 };
 
 function toChronoItem(event: EventWithEpisodes): ChronoItem {
-  const era = ERA_BY_ID[event.era];
-  const ep = event.primaryEpisode;
-  const subtitle = ep
-    ? `${era?.name ?? event.era} • ${event.episodes.length} episode${event.episodes.length === 1 ? "" : "s"}`
-    : era?.name;
-
   const item: ChronoItem = {
     title: formatEventDate(event.year, event.month, event.day),
     cardTitle: event.title,
-    cardSubtitle: subtitle,
-    url: ep?.url,
   };
-
-  const cover = event.imageUrl ?? ep?.thumbnailUrl;
+  const cover = event.imageUrl ?? event.primaryEpisode?.thumbnailUrl;
   if (cover) {
     item.media = {
       type: "IMAGE",
@@ -72,11 +63,44 @@ function sortEpisodesForDisplay(
   return primary ? [primary, ...rest] : rest;
 }
 
+function truncate(s: string, max: number): string {
+  const trimmed = s.trim();
+  if (trimmed.length <= max) return trimmed;
+  return trimmed.slice(0, max - 1).trimEnd() + "…";
+}
+
 function EventCard({ event }: { event: EventWithEpisodes }) {
   const ordered = sortEpisodesForDisplay(event.episodes, event.primaryEpisode);
+  const era = ERA_BY_ID[event.era];
+  const primaryUrl = event.primaryEpisode?.url;
 
   return (
-    <div className="rh-event-detail">
+    <div className="rh-event-detail" data-event-id={event.id}>
+      <h3 className="rh-event-title">
+        {primaryUrl ? (
+          <a
+            href={primaryUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rh-event-title-link"
+          >
+            {event.title}
+          </a>
+        ) : (
+          event.title
+        )}
+      </h3>
+      <p className="rh-event-subtitle">
+        <span className="rh-event-era">{era?.name ?? event.era}</span>
+        {ordered.length > 0 && (
+          <>
+            <span className="rh-event-dot" aria-hidden="true">•</span>
+            <span>
+              {ordered.length} episode{ordered.length === 1 ? "" : "s"}
+            </span>
+          </>
+        )}
+      </p>
       <p className="rh-event-desc">{event.description}</p>
       {ordered.length > 0 && (
         <>
@@ -92,7 +116,12 @@ function EventCard({ event }: { event: EventWithEpisodes }) {
                   rel="noopener noreferrer"
                   className="rh-episode-link"
                 >
-                  {ep.title}
+                  <span className="rh-episode-title">{ep.title}</span>
+                  {ep.description && (
+                    <span className="rh-episode-summary">
+                      {truncate(ep.description, 160)}
+                    </span>
+                  )}
                 </a>
               </li>
             ))}
@@ -153,7 +182,7 @@ export default function Timeline({ events }: { events: EventWithEpisodes[] }) {
         // overflow container — otherwise wheel events are trapped when
         // the cursor is over the timeline.
         scrollable={false}
-        cardHeight={220}
+        cardHeight={240}
         fontSizes={{
           cardSubtitle: "0.78rem",
           cardText: "0.95rem",
