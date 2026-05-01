@@ -341,10 +341,7 @@ body {
   overflow: visible;
 }
 .ct-card-compact .ct-cover img {
-  transition: filter 0.2s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.ct-card-compact:hover .ct-cover img {
-  transform: scale(1.05);
+  transition: filter 0.2s ease;
 }
 
 /* Reduced-motion users get the description revealed without the scale/lift,
@@ -352,8 +349,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .ct-card-compact,
   .ct-card-compact:hover,
-  .ct-card-compact .ct-event-desc,
-  .ct-card-compact .ct-cover img {
+  .ct-card-compact .ct-event-desc {
     transition: none;
     transform: none;
   }
