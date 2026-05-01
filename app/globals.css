@@ -234,17 +234,23 @@ body {
   border-radius: 14px;
   overflow: hidden;
   box-shadow: 0 28px 70px -36px rgba(0, 0, 0, 0.75), 0 1px 0 rgba(255, 255, 255, 0.02) inset;
-  transition: border-color 0.15s ease, transform 0.15s ease;
+  transition:
+    border-color 0.2s ease,
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .ct-card:hover { border-color: var(--border-strong); }
 
 /* Compact horizontal layout for stacked cards (year shared by 2+ episodes).
-   Thumbnail on the side, body alongside it. No description, less padding. */
+   Thumbnail on the side, body alongside it. Description hidden by default
+   and revealed on hover via a fluid expand animation (see below). */
 .ct-card-compact {
   display: grid;
   grid-template-columns: 128px 1fr;
   border-radius: 12px;
+  transform-origin: left center;
 }
+.ct-row.ct-left .ct-card-compact { transform-origin: right center; }
 .ct-card-compact .ct-cover {
   display: block;
   border-bottom: none;
@@ -282,6 +288,63 @@ body {
   border-left: 1px solid var(--border);
 }
 .ct-row.ct-left .ct-card-compact .ct-card-body { order: 1; }
+
+/* Hover-to-expand for compact cards: reveal the truncated description and
+   lift the card visually. Description max-height is animated (we cap it at
+   a generous 240px so the height transition stays smooth — full text fits
+   under the 240-char truncation in nearly every case). */
+.ct-card-compact .ct-event-desc {
+  max-height: 0;
+  margin: 0;
+  opacity: 0;
+  overflow: hidden;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+  transition:
+    max-height 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    margin-top 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.25s ease 0.05s;
+}
+.ct-card-compact:hover {
+  z-index: 5;
+  border-color: var(--border-strong);
+  box-shadow:
+    0 32px 80px -28px rgba(0, 0, 0, 0.85),
+    0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  transform: scale(1.06);
+}
+.ct-card-compact:hover .ct-event-desc {
+  max-height: 240px;
+  opacity: 1;
+  margin-top: 0.4rem;
+}
+.ct-card-compact .ct-event-title {
+  transition: -webkit-line-clamp 0.25s ease;
+}
+.ct-card-compact:hover .ct-event-title {
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+.ct-card-compact .ct-cover img {
+  transition: filter 0.2s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.ct-card-compact:hover .ct-cover img {
+  transform: scale(1.05);
+}
+
+/* Reduced-motion users get the description revealed without the scale/lift,
+   so they still get the content with fewer animations. */
+@media (prefers-reduced-motion: reduce) {
+  .ct-card-compact,
+  .ct-card-compact:hover,
+  .ct-card-compact .ct-event-desc,
+  .ct-card-compact .ct-cover img {
+    transition: none;
+    transform: none;
+  }
+  .ct-card-compact:hover { transform: none; }
+}
 
 /* ── Historical event markers ───────────────────────────────────────── */
 /* Curated context anchors — visually distinct from episode cards.       */

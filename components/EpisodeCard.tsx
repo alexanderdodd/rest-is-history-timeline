@@ -97,7 +97,7 @@ export default function EpisodeCard({
         <p className="ct-event-meta">
           <span className="ct-event-era">{dateRangeLabel(episode)}</span>
         </p>
-        {!compact && episode.description && (
+        {episode.description && (
           <p className="ct-event-desc">{truncate(episode.description, 240)}</p>
         )}
       </div>

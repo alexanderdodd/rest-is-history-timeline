@@ -4,7 +4,7 @@ The single-page, vertically-alternating timeline that anchors this app. Hand-rol
 
 ## What it does
 - Renders **every classified podcast episode** (~400+) as its own card on the timeline, plotted at the **start year of the episode's first covers range** so you can scroll through history and see the show's coverage of each period.
-- **Episodes that share a start year are grouped onto one row** — the year label appears once, and all episodes for that year stack on the same side of the spine. When a group has more than one episode, the cards switch to a compact horizontal layout (small thumbnail beside title + date) to save vertical space.
+- **Episodes that share a start year are grouped onto one row** — the year label appears once, and all episodes for that year stack on the same side of the spine. When a group has more than one episode, the cards switch to a compact horizontal layout (small thumbnail beside title + date) to save vertical space. **Hovering a compact card "blows it up"** — a fluid scale + lift reveals the full description and un-clamps the title so you can read the whole thing without leaving the timeline.
 - Group rows alternate left/right of a central spine by group index; the page scrolls top-to-bottom from oldest covered period to most recent.
 - Each card shows the episode's YouTube thumbnail, title (linked to YouTube), the date range it covers, and a short summary truncated from the YouTube description.
 - The thumbnail and title both link straight to the episode on YouTube. Single-click, opens in a new tab.
