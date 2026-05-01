@@ -29,6 +29,12 @@ export type ClassifiedEpisode = {
   classifierVersion: string;
   /** ISO timestamp the episode was classified. Useful for cache invalidation. */
   classifiedAt: string;
+  /**
+   * True when classification fell back to the safe default (covers: [],
+   * confidence: "low") because all attempts threw. The orchestrator uses this
+   * to retry on the next run without bumping CLASSIFIER_VERSION.
+   */
+  classifierFallback?: boolean;
 };
 
 /** Optional human override layer — wins over LLM output. */

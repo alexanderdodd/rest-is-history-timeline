@@ -119,7 +119,9 @@ export async function syncEpisodes(opts: SyncOptions = {}): Promise<SyncResult> 
   const reused: ClassifiedEpisode[] = [];
   for (const v of episodes) {
     const prev = existingById.get(v.videoId);
-    if (prev && prev.classifierVersion === CLASSIFIER_VERSION) {
+    const versionOk = prev && prev.classifierVersion === CLASSIFIER_VERSION;
+    const wasFallback = prev?.classifierFallback === true;
+    if (prev && versionOk && !wasFallback) {
       reused.push(prev);
     } else {
       toClassify.push(v);
@@ -133,8 +135,8 @@ export async function syncEpisodes(opts: SyncOptions = {}): Promise<SyncResult> 
     slice,
     CLASSIFY_CONCURRENCY,
     async (video, i) => {
-      const output = await classifyVideo(video);
-      const built = buildClassifiedEpisode(video, output);
+      const result = await classifyVideo(video);
+      const built = buildClassifiedEpisode(video, result);
       log({ type: "classified", videoId: video.videoId, index: i + 1, total: slice.length });
       return built;
     },

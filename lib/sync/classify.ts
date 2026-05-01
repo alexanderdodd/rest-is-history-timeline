@@ -11,7 +11,7 @@ import { EVENTS } from "@/lib/data/events";
 import type { ClassifiedEpisode, Confidence, CoverRange } from "./types";
 import type { YouTubeVideo } from "./youtube";
 
-export const CLASSIFIER_VERSION = "2026-05-01.v1";
+export const CLASSIFIER_VERSION = "2026-05-01.v2";
 export const CLASSIFIER_MODEL = "anthropic/claude-haiku-4.5";
 
 const SYSTEM_PROMPT = `You categorise episodes of "The Rest Is History" podcast by the historical period(s) they discuss.
@@ -108,13 +108,21 @@ function client(): OpenAI {
     baseURL: "https://openrouter.ai/api/v1",
     defaultHeaders: {
       "HTTP-Referer": "https://github.com/alexanderdodd/rest-is-history-timeline",
-      "X-Title": "The Rest Is History — Timeline",
+      // ASCII-only — HTTP headers are ByteStrings. An em dash here makes
+      // undici reject every request before it leaves the box.
+      "X-Title": "The Rest Is History Timeline",
     },
   });
   return cachedClient;
 }
 
-export async function classifyVideo(video: YouTubeVideo): Promise<ClassifierOutput> {
+export type ClassifyResult = {
+  output: ClassifierOutput;
+  /** True when both attempts threw and we returned the safe default. */
+  fallback: boolean;
+};
+
+export async function classifyVideo(video: YouTubeVideo): Promise<ClassifyResult> {
   let lastErr: unknown;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
@@ -128,19 +136,21 @@ export async function classifyVideo(video: YouTubeVideo): Promise<ClassifierOutp
         ],
       });
       const text = completion.choices[0]?.message?.content ?? "";
-      return parseClassifierOutput(text);
+      return { output: parseClassifierOutput(text), fallback: false };
     } catch (err) {
       lastErr = err;
     }
   }
-  // Both attempts failed — return a safe default so the rest of the run can proceed.
   console.warn(`Classifier failed for ${video.videoId}: ${String(lastErr)}`);
-  return { covers: [], eventIds: [], confidence: "low" };
+  return {
+    output: { covers: [], eventIds: [], confidence: "low" },
+    fallback: true,
+  };
 }
 
 export function buildClassifiedEpisode(
   video: YouTubeVideo,
-  output: ClassifierOutput,
+  result: ClassifyResult,
 ): ClassifiedEpisode {
   return {
     youtubeId: video.videoId,
@@ -150,10 +160,11 @@ export function buildClassifiedEpisode(
     durationSeconds: video.durationSeconds,
     thumbnailUrl: video.thumbnailUrl,
     url: `https://www.youtube.com/watch?v=${video.videoId}`,
-    covers: output.covers,
-    eventIds: output.eventIds,
-    confidence: output.confidence,
+    covers: result.output.covers,
+    eventIds: result.output.eventIds,
+    confidence: result.output.confidence,
     classifierVersion: CLASSIFIER_VERSION,
     classifiedAt: new Date().toISOString(),
+    ...(result.fallback ? { classifierFallback: true } : {}),
   };
 }
