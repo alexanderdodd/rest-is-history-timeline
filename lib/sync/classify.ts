@@ -16,7 +16,7 @@ import type {
 } from "./types";
 import type { YouTubeVideo } from "./youtube";
 
-export const CLASSIFIER_VERSION = "2026-05-01.v7";
+export const CLASSIFIER_VERSION = "2026-05-04.v8";
 export const CLASSIFIER_MODEL = "anthropic/claude-haiku-4.5";
 
 const SYSTEM_PROMPT = `You categorise episodes of "The Rest Is History" podcast by the historical period(s) they discuss and identify multi-part series membership.
@@ -27,7 +27,8 @@ Given a YouTube episode title and description, output a JSON object:
   "covers": [{"startYear": <number>, "endYear": <number>, "startMonth"?: <1-12>, "startDay"?: <1-31>, "endMonth"?: <1-12>, "endDay"?: <1-31>}, ...],
   "eventIds": [<string>, ...],
   "confidence": "high" | "medium" | "low",
-  "series": { "topic": <string>, "seriesNumber": <number>, "partNumber": <number>, "totalParts"?: <number> } | null
+  "series": { "topic": <string>, "seriesNumber": <number>, "partNumber": <number>, "totalParts"?: <number> } | null,
+  "hostsOnly": <boolean>
 }
 
 COVERS — temporal scope of THIS episode:
@@ -80,6 +81,15 @@ SERIES DETECTION:
 - "totalParts" is the total parts in THIS season/series (e.g. the "6" in "Part 5 of 6"); omit if unknown.
 - If the episode is a one-off (not part of a series), set "series" to null.
 
+HOST DETECTION:
+- The Rest Is History is hosted by Tom Holland and Dominic Sandbrook. The default state of every episode is hosts-only.
+- Set "hostsOnly": false when the title OR description clearly indicates a third-party GUEST features prominently. Examples of guest signals:
+  - Title: "with Mary Beard", "joined by Adam Curtis", "Tom Hanks on Hollywood", "ft. Lord Frost"
+  - Description: "today we welcome…", "joining Tom and Dominic…", "in conversation with…", a guest's name and biography in the description
+- Set "hostsOnly": true when there is no guest signal — just Tom and Dominic.
+- A passing reference to a historical figure ("today's episode is about Napoleon") is NOT a guest. A guest is a real living contributor to the recording.
+- If you can't tell, default to "hostsOnly": true.
+
 Return ONLY the JSON object, no surrounding text or code fences.`;
 
 function eventCorpusBlock(): string {
@@ -110,6 +120,7 @@ type ClassifierOutput = {
   eventIds: string[];
   confidence: Confidence;
   series?: SeriesInfo;
+  hostsOnly: boolean;
 };
 
 function pickDatePart(
@@ -195,6 +206,7 @@ function parseClassifierOutput(text: string): ClassifierOutput {
       }),
     eventIds: eventIds.filter((id): id is string => typeof id === "string"),
     confidence,
+    hostsOnly: typeof json.hostsOnly === "boolean" ? json.hostsOnly : true,
   };
 
   const series = parseSeries(json.series);
@@ -248,7 +260,7 @@ export async function classifyVideo(video: YouTubeVideo): Promise<ClassifyResult
   }
   console.warn(`Classifier failed for ${video.videoId}: ${String(lastErr)}`);
   return {
-    output: { covers: [], eventIds: [], confidence: "low" },
+    output: { covers: [], eventIds: [], confidence: "low", hostsOnly: true },
     fallback: true,
   };
 }
@@ -268,6 +280,7 @@ export function buildClassifiedEpisode(
     covers: result.output.covers,
     eventIds: result.output.eventIds,
     confidence: result.output.confidence,
+    hostsOnly: result.output.hostsOnly,
     classifierVersion: CLASSIFIER_VERSION,
     classifiedAt: new Date().toISOString(),
     ...(result.output.series ? { series: result.output.series } : {}),

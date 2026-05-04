@@ -52,6 +52,13 @@ export type ClassifiedEpisode = {
   /** Ids from `lib/data/events.ts` that this episode is materially about. */
   eventIds: string[];
   confidence: Confidence;
+  /**
+   * True when only Tom Holland and Dominic Sandbrook appear; false when a
+   * guest features prominently in the episode. Best-effort from title +
+   * description signals. Defaults to true when ambiguous (the show is
+   * hosts-only by default).
+   */
+  hostsOnly: boolean;
   classifierVersion: string;
   /** ISO timestamp the episode was classified. Useful for cache invalidation. */
   classifiedAt: string;
