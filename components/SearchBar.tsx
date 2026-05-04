@@ -15,6 +15,9 @@ import type { PositionedEpisode } from "@/lib/episodes-loader";
 
 type Props = {
   episodes: PositionedEpisode[];
+  /** Called after a result is selected and the page scrolls to it.
+   *  The toolbar uses this to close the surrounding dialog. */
+  onSelect?: () => void;
 };
 
 function reasonLabel(reason: SearchResult["reason"]): string {
@@ -46,7 +49,7 @@ function scrollToTimelineId(id: string): boolean {
   return true;
 }
 
-export default function SearchBar({ episodes }: Props) {
+export default function SearchBar({ episodes, onSelect }: Props) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -70,19 +73,9 @@ export default function SearchBar({ episodes }: Props) {
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, []);
 
-  // Focus the input on `/` keypress, like a typical site search.
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key !== "/") return;
-      const target = e.target as HTMLElement | null;
-      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) return;
-      e.preventDefault();
-      inputRef.current?.focus();
-      setOpen(true);
-    }
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, []);
+  // The `/` keyboard shortcut is owned by the Toolbar (it opens the dialog
+  // that contains this SearchBar and focuses the input). Keeping it here too
+  // would double-fire — Toolbar's handler covers the case for us.
 
   const select = useCallback(
     (r: SearchResult) => {
@@ -96,9 +89,10 @@ export default function SearchBar({ episodes }: Props) {
           match_reason: r.reason,
           query_len: queryLen,
         });
+        onSelect?.();
       }
     },
-    [query],
+    [query, onSelect],
   );
 
   const onKeyDown = useCallback(
@@ -165,7 +159,6 @@ export default function SearchBar({ episodes }: Props) {
             ×
           </button>
         )}
-        <kbd className="search-shortcut" aria-hidden="true">/</kbd>
       </div>
 
       {open && query && (

@@ -1,6 +1,6 @@
 # filters
 
-Three opt-in toggles in the docked toolbar that let the user thin out the timeline to the episodes they actually want to browse. Live in the toolbar alongside the search bar; persist across visits via localStorage.
+Three opt-in toggles inside the search-and-filter dialog (opened via the sticky "Search & filter" trigger or `/`). Persist across visits via localStorage. The trigger button shows a count badge when any filter is active so the user can see at a glance that the timeline is being thinned.
 
 ## What it does
 
@@ -26,7 +26,7 @@ The three are orthogonal and combinable. Setting all three gives you the high-qu
 
 ## How it works
 
-- **`components/TimelineApp.tsx`** is the top-level client component. Owns filter state via `useState`; renders the toolbar (`<SearchBar />` + `<FilterPanel />`), the `<Timeline />`, and the `<ScrollDepthTracker />`.
+- **`components/TimelineApp.tsx`** is the top-level client component. Owns filter state via `useState`; renders the `<Toolbar />` (which itself contains the trigger button + the dialog with `<SearchBar />` and `<FilterPanel />` inside), the `<Timeline />`, and the `<ScrollDepthTracker />`.
   - On mount, hydrates from `localStorage["trih-timeline-filters"]` via `useEffect`. We deliberately don't initialise from localStorage in `useState` because that would cause a server/client hydration mismatch — server has no localStorage so it always renders DEFAULT_FILTERS, and a client with saved filters would render a different tree.
   - On every filter change, persists back to localStorage in another `useEffect` (gated on the `hydrated` flag so the first load's setState from localStorage doesn't immediately re-write the same value).
   - Filters apply to (a) the rows passed to `<Timeline />` and (b) the episodes passed to `<SearchBar />`. A row that has no surviving episodes is dropped entirely; event rows always pass through.
@@ -43,5 +43,5 @@ The three are orthogonal and combinable. Setting all three gives you the high-qu
 - **Hydration-safe initialisation.** `useState(DEFAULT_FILTERS)` then `useEffect` to load saved filters. The brief flash of "all-off" on first paint before the saved state kicks in is acceptable; the alternative (lazy initialiser reading localStorage) breaks hydration.
 - **`hostsOnly: undefined` is treated as `true`.** Episodes classified before v8 don't have the field. Treating missing as "hosts-only" matches the show's default; the alternative (hide them as if guest-flagged) would silently nuke most of the timeline pre-resync.
 - **SearchBar receives the FILTERED set**, not all episodes. This keeps search consistent with what's rendered: a click on a search result will always find a card in the DOM. If the user wants to find a hidden episode, they unfilter first.
-- **Toolbar is one sticky region** (`.toolbar`), with `.search-bar` and `.filter-panel` as plain panels inside it. Each was previously its own sticky element which would have meant juggling top offsets; one sticky parent owns the dock.
+- **The only thing always docked is the trigger button**, not the filter UI itself. The previous always-visible toolbar took ~90px of vertical space on every page; collapsing search and filters into a dialog reclaims that for the timeline. See [features/search.md](./search.md) for the dialog's dialogue plumbing.
 - **Filter changes remount `<SeriesConnectors />` via a `key` prop.** The connectors compute SVG paths from DOM measurement; without the remount they'd retain stale geometry until the next ResizeObserver fire.

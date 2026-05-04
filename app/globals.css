@@ -56,22 +56,155 @@ body {
   border: 0;
 }
 
-/* ── Toolbar (search + filters) ─────────────────────────────────────── */
-/* The whole toolbar is one sticky region. Search-bar and filter-panel are
-   styled as panels inside it so they share the blurred background and only
-   the toolbar owns the position: sticky. */
-.toolbar {
+/* ── Toolbar trigger (the only thing docked at the top) ─────────────── */
+/* Sticky thin strip with a single "Search & filter" button on the right.
+   Click — or press / — opens the .search-dialog overlay below. */
+.toolbar-strip {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: rgba(12, 13, 18, 0.85);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.55rem 1rem;
+  background: rgba(12, 13, 18, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
 }
 
-.search-bar {
-  padding: 0.7rem 1rem 0.4rem;
+.toolbar-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.85rem;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
+    background 0.15s ease;
+}
+.toolbar-trigger:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+.toolbar-trigger:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.toolbar-trigger.is-active {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.toolbar-trigger svg { color: var(--text-faint); }
+.toolbar-trigger.is-active svg { color: var(--accent); }
+
+.toolbar-trigger-label { line-height: 1; }
+
+.toolbar-trigger-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 0.4rem;
+  background: var(--accent);
+  color: #1a1d27;
+  border-radius: 9px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.toolbar-trigger-kbd {
+  font-family: inherit;
+  font-size: 0.7rem;
+  color: var(--text-faint);
+  border: 1px solid var(--border-strong);
+  padding: 0.05rem 0.4rem;
+  border-radius: 4px;
+  margin-left: 0.15rem;
+  line-height: 1;
+}
+
+/* ── Search & filter dialog (native <dialog>) ────────────────────────── */
+.search-dialog {
+  margin: 8vh auto auto;
+  max-width: 720px;
+  width: calc(100% - 2rem);
+  max-height: 80vh;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0;
+  color: var(--text);
+  box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.7);
+  overflow: hidden;
+}
+.search-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.search-dialog-inner {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  max-height: 80vh;
+  overflow: hidden;
+}
+.search-dialog-close {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  z-index: 1;
+  background: transparent;
+  border: 0;
+  color: var(--text-faint);
+  font-size: 1.4rem;
+  line-height: 1;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.search-dialog-close:hover {
+  background: var(--bg-elev-2);
+  color: var(--text);
+}
+
+/* When SearchBar lives inside the dialog, drop its sticky/blur chrome and
+   let it just be a panel. */
+.search-dialog .search-bar {
+  position: static;
+  background: transparent;
+  backdrop-filter: none;
+  border-bottom: none;
+  padding: 1rem 1rem 0.5rem;
+}
+/* Search results render inline in the dialog (not as an absolute popover)
+   and scroll within the dialog if they overflow. */
+.search-dialog .search-results {
+  position: static;
+  top: auto;
+  left: auto;
+  right: auto;
+  margin: 0.5rem 1rem 0;
+  max-height: 50vh;
+  box-shadow: none;
+}
+.search-dialog .filter-panel {
+  padding: 0.7rem 1rem 0.9rem;
+  border-top: 1px solid var(--border);
+  margin: 0.5rem 0 0;
 }
 .search-inner {
   position: relative;

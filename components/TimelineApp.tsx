@@ -3,14 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import EpisodeCard from "@/components/EpisodeCard";
 import EventMarker from "@/components/EventMarker";
-import FilterPanel, {
-  DEFAULT_FILTERS,
-  type Filters,
-} from "@/components/FilterPanel";
+import { DEFAULT_FILTERS, type Filters } from "@/components/FilterPanel";
 import ScrollDepthTracker from "@/components/ScrollDepthTracker";
-import SearchBar from "@/components/SearchBar";
 import SeriesConnectors from "@/components/SeriesConnectors";
 import Timeline, { type TimelineItem } from "@/components/Timeline";
+import Toolbar from "@/components/Toolbar";
 import { formatEventDate, formatYearLabel } from "@/lib/dates";
 import type { HistoricalEvent } from "@/lib/data/types";
 import type { EpisodeGroup, PositionedEpisode } from "@/lib/episodes-loader";
@@ -130,10 +127,11 @@ export default function TimelineApp({ rows, episodes }: Props) {
 
   return (
     <>
-      <div className="toolbar">
-        <SearchBar episodes={filteredEpisodes} />
-        <FilterPanel filters={filters} onChange={setFilters} />
-      </div>
+      <Toolbar
+        filters={filters}
+        onFiltersChange={setFilters}
+        episodes={filteredEpisodes}
+      />
       <Timeline
         items={items}
         overlay={<SeriesConnectors key={connectorKey} />}
