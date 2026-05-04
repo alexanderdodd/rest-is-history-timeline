@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "sync-episodes": "tsx scripts/sync-episodes.ts"
+    "sync-episodes": "tsx scripts/sync-episodes.ts",
+    "inspect-episodes": "tsx scripts/inspect-episodes.ts"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
