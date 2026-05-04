@@ -132,14 +132,6 @@ export default function Toolbar({
         aria-label="Search and filter"
       >
         <div className="search-dialog-inner">
-          <button
-            type="button"
-            className="search-dialog-close"
-            onClick={() => setOpen(false)}
-            aria-label="Close"
-          >
-            ×
-          </button>
           <SearchBar episodes={episodes} onSelect={() => setOpen(false)} />
           <FilterPanel filters={filters} onChange={onFiltersChange} />
         </div>

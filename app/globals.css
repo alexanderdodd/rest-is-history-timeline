@@ -187,27 +187,6 @@ body {
   max-height: 80vh;
   overflow: hidden;
 }
-.search-dialog-close {
-  position: absolute;
-  top: 0.4rem;
-  right: 0.4rem;
-  z-index: 1;
-  background: transparent;
-  border: 0;
-  color: var(--text-faint);
-  font-size: 1.4rem;
-  line-height: 1;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease;
-}
-.search-dialog-close:hover {
-  background: var(--bg-elev-2);
-  color: var(--text);
-}
-
 /* When SearchBar lives inside the dialog, drop its sticky/blur chrome and
    let it just be a panel. */
 .search-dialog .search-bar {

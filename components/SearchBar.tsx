@@ -63,19 +63,19 @@ export default function SearchBar({ episodes, onSelect }: Props) {
     setActiveIndex(0);
   }, [query]);
 
-  // Close the dropdown when clicking outside.
-  useEffect(() => {
-    function onPointerDown(e: PointerEvent) {
-      if (!containerRef.current) return;
-      if (!containerRef.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, []);
-
-  // The `/` keyboard shortcut is owned by the Toolbar (it opens the dialog
-  // that contains this SearchBar and focuses the input). Keeping it here too
-  // would double-fire — Toolbar's handler covers the case for us.
+  // No document-level pointerdown listener.
+  //
+  // The original "click outside the search bar → close dropdown" listener
+  // was sensible when SearchBar was docked at the top of the page: it
+  // dismissed the results when the user clicked elsewhere on the timeline.
+  // Inside the search dialog it actively breaks things — clicking a filter
+  // checkbox at the bottom of the dialog would close the dropdown, the
+  // resulting layout shift would cause the click to land on the dialog
+  // backdrop, and the whole dialog would close.
+  //
+  // Inside the dialog the dropdown closes naturally when the user clears
+  // the query, picks a result, or closes the dialog (Escape / backdrop).
+  // The `/` shortcut is owned by Toolbar so we don't need it here either.
 
   const select = useCallback(
     (r: SearchResult) => {
