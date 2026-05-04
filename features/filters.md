@@ -8,7 +8,7 @@ Three filters, all client-side, all combinable:
 
 - **Tom and Dominic only (no guests)** (checkbox) — hides episodes where a guest features prominently. Pure Tom + Dominic only.
 - **Series only** (checkbox) — hides one-off episodes. Only multi-part series episodes (French Revolution, Caligula, etc.) remain.
-- **Hide numbered ≤ N** (number input) — hides numbered standalone episodes (titles starting `123. ...`) whose number is at or below N. Episodes WITHOUT a leading number (named series episodes, archive re-uploads) are unaffected.
+- **Show only numbered &gt; N** (number input) — strict-mode quality cutoff. When set, hides every episode without a leading number AND every numbered episode at or below N. The user phrased this as "only numbered episodes higher than x", which reads literally: the surviving set is {numbered episodes whose number &gt; N}.
 
 Filters are remembered per-browser in `localStorage["trih-timeline-filters"]` so they stick across visits. Clear it (or use a different browser) to reset.
 
@@ -38,7 +38,7 @@ The three are orthogonal and combinable. Setting all three gives you the high-qu
 
 ## Non-obvious decisions / constraints
 
-- **`min episode number` does NOT hide non-numbered episodes.** Reading the user's stated motive ("get to the quality stuff"), unnumbered series episodes are usually the quality stuff. The filter only hides numbered standalones with `number ≤ N`. If the user wants to hide all standalones, they combine "Hide numbered ≤ 9999" with the rest of the toolset, or use "Series only".
+- **`Show only numbered > N` is strict** — it hides BOTH numbered ≤ N and every unnumbered episode. An earlier permissive interpretation (which only hid numbered ≤ N and let unnumbered through) silently failed to match the user's mental model: setting N very high should yield an empty timeline, not "all the unnumbered ones still showing through". If the user wants to keep series episodes alongside late-numbered ones, they leave this filter off and use "Series only" instead.
 - **Filter state in localStorage, not URL params.** The site is single-page and the user iterates by reloading; durability matters more than shareability. Switching to `useSearchParams` is a one-liner if we ever need shareable filter URLs.
 - **Hydration-safe initialisation.** `useState(DEFAULT_FILTERS)` then `useEffect` to load saved filters. The brief flash of "all-off" on first paint before the saved state kicks in is acceptable; the alternative (lazy initialiser reading localStorage) breaks hydration.
 - **`hostsOnly: undefined` is treated as `true`.** Episodes classified before v8 don't have the field. Treating missing as "hosts-only" matches the show's default; the alternative (hide them as if guest-flagged) would silently nuke most of the timeline pre-resync.

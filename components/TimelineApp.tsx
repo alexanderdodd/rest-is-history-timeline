@@ -29,7 +29,9 @@ function passes(ep: PositionedEpisode, f: Filters): boolean {
   if (f.hostsOnly && ep.hostsOnly === false) return false;
   if (f.seriesOnly && !ep.series) return false;
   if (f.minEpisodeNumber > 0) {
-    if (ep.episodeNumber !== null && ep.episodeNumber <= f.minEpisodeNumber) {
+    // Strict reading of "only numbered episodes higher than N": both
+    // numbered episodes ≤ N AND every unnumbered episode are hidden.
+    if (ep.episodeNumber === null || ep.episodeNumber <= f.minEpisodeNumber) {
       return false;
     }
   }
