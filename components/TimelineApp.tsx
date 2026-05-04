@@ -28,13 +28,11 @@ function passes(ep: PositionedEpisode, f: Filters): boolean {
   // assumed hosts-only since the show is hosts-only by default.
   if (f.hostsOnly && ep.hostsOnly === false) return false;
   if (f.seriesOnly && !ep.series) return false;
-  if (f.minEpisodeNumber > 0) {
-    // Strict reading of "only numbered episodes higher than N": both
-    // numbered episodes ≤ N AND every unnumbered episode are hidden.
-    if (ep.episodeNumber === null || ep.episodeNumber <= f.minEpisodeNumber) {
-      return false;
-    }
-  }
+  // Lexicographic comparison works because both values are ISO-shaped:
+  // ep.publishedAt is "YYYY-MM-DDTHH:MM:SSZ" and f.publishedAfter is
+  // "YYYY-MM-DD". An episode published exactly on the filter date passes
+  // (its T-prefixed time is greater than the bare date string).
+  if (f.publishedAfter && ep.publishedAt < f.publishedAfter) return false;
   return true;
 }
 
@@ -92,8 +90,17 @@ export default function TimelineApp({ rows, episodes }: Props) {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
-        const parsed = JSON.parse(raw);
-        setFilters({ ...DEFAULT_FILTERS, ...parsed });
+        const parsed = JSON.parse(raw) as Record<string, unknown>;
+        // Sanitise rather than spread — old keys (e.g. minEpisodeNumber from
+        // the previous filter design) shouldn't survive into the live state.
+        setFilters({
+          hostsOnly: parsed.hostsOnly === true,
+          seriesOnly: parsed.seriesOnly === true,
+          publishedAfter:
+            typeof parsed.publishedAfter === "string" && parsed.publishedAfter
+              ? parsed.publishedAfter
+              : null,
+        });
       }
     } catch {
       // Ignore — bad JSON or storage disabled is fine.
@@ -125,7 +132,7 @@ export default function TimelineApp({ rows, episodes }: Props) {
   // Filter state is part of the connector layout key — when filters change,
   // the set of visible series cards changes, and we want the SVG paths
   // recomputed against the new DOM.
-  const connectorKey = `${filters.hostsOnly}|${filters.seriesOnly}|${filters.minEpisodeNumber}`;
+  const connectorKey = `${filters.hostsOnly}|${filters.seriesOnly}|${filters.publishedAfter ?? ""}`;
 
   return (
     <>

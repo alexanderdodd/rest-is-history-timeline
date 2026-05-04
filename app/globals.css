@@ -272,7 +272,8 @@ body {
   color: var(--text-dim);
 }
 .filter-toggle,
-.filter-number {
+.filter-number,
+.filter-date {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -287,21 +288,25 @@ body {
   margin: 0;
 }
 .filter-toggle:hover span,
-.filter-number:hover span {
+.filter-number:hover span,
+.filter-date:hover span {
   color: var(--text);
 }
-.filter-number input[type="number"] {
-  width: 64px;
+.filter-number input[type="number"],
+.filter-date input[type="date"] {
   background: var(--bg-elev);
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 0.18rem 0.4rem;
+  padding: 0.18rem 0.45rem;
   color: var(--text);
   font: inherit;
   font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
   outline: none;
   transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.filter-number input[type="number"] {
+  width: 64px;
   -moz-appearance: textfield;
 }
 .filter-number input[type="number"]::-webkit-outer-spin-button,
@@ -309,7 +314,8 @@ body {
   -webkit-appearance: none;
   margin: 0;
 }
-.filter-number input[type="number"]:focus {
+.filter-number input[type="number"]:focus,
+.filter-date input[type="date"]:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
@@ -660,12 +666,17 @@ a.ct-cover:hover img { filter: brightness(1.08); }
 .ct-event-meta {
   margin: 0;
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem 0.6rem;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+}
+.ct-event-meta-pub {
+  color: var(--text-faint);
+  font-weight: 600;
 }
 
 /* Series badge — appears above the episode title when the episode is part

@@ -6,18 +6,21 @@ export type Filters = {
   /** Hide episodes that aren't part of a multi-part series. */
   seriesOnly: boolean;
   /**
-   * When > 0, show ONLY numbered episodes whose leading "232." style number
-   * is strictly greater than this. Both numbered episodes ≤ N and every
-   * unnumbered episode are hidden — the user explicitly asked for "only
-   * numbered episodes higher than x". Zero means "no filter".
+   * When set, hide episodes whose YouTube `publishedAt` is strictly before
+   * this date. Stored as a `YYYY-MM-DD` string (the format produced by
+   * `<input type="date">`). Null means "no filter". String comparison
+   * against the ISO `publishedAt` is correct for our purposes — the filter
+   * value has no time component, so `ep.publishedAt < filterValue` is
+   * lexicographically equivalent to "published before midnight UTC on the
+   * filter date".
    */
-  minEpisodeNumber: number;
+  publishedAfter: string | null;
 };
 
 export const DEFAULT_FILTERS: Filters = {
   hostsOnly: false,
   seriesOnly: false,
-  minEpisodeNumber: 0,
+  publishedAfter: null,
 };
 
 type Props = {
@@ -45,29 +48,19 @@ export default function FilterPanel({ filters, onChange }: Props) {
         <span>Series only</span>
       </label>
       <label
-        className="filter-number"
-        title="When set, hides every episode without a leading number AND every numbered episode at or below this value."
+        className="filter-date"
+        title="Hide episodes published before this date."
       >
-        <span>Show only numbered &gt;</span>
+        <span>Published after</span>
         <input
-          type="number"
-          inputMode="numeric"
-          min={0}
-          step={50}
-          placeholder="off"
-          value={filters.minEpisodeNumber || ""}
-          onChange={(e) => {
-            const raw = e.target.value;
-            if (raw === "") {
-              onChange({ ...filters, minEpisodeNumber: 0 });
-              return;
-            }
-            const n = Number.parseInt(raw, 10);
+          type="date"
+          value={filters.publishedAfter ?? ""}
+          onChange={(e) =>
             onChange({
               ...filters,
-              minEpisodeNumber: Number.isFinite(n) && n > 0 ? n : 0,
-            });
-          }}
+              publishedAfter: e.target.value || null,
+            })
+          }
         />
       </label>
     </div>

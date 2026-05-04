@@ -15,7 +15,7 @@ function activeFilterCount(f: Filters): number {
   let n = 0;
   if (f.hostsOnly) n++;
   if (f.seriesOnly) n++;
-  if (f.minEpisodeNumber > 0) n++;
+  if (f.publishedAfter) n++;
   return n;
 }
 
