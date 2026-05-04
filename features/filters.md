@@ -6,7 +6,7 @@ Three opt-in toggles inside the search-and-filter dialog (opened via the sticky 
 
 Three filters, all client-side, all combinable:
 
-- **Hosts only** (checkbox) — hides episodes where a guest features prominently. Pure Tom + Dominic only.
+- **Tom and Dominic only (no guests)** (checkbox) — hides episodes where a guest features prominently. Pure Tom + Dominic only.
 - **Series only** (checkbox) — hides one-off episodes. Only multi-part series episodes (French Revolution, Caligula, etc.) remain.
 - **Hide numbered ≤ N** (number input) — hides numbered standalone episodes (titles starting `123. ...`) whose number is at or below N. Episodes WITHOUT a leading number (named series episodes, archive re-uploads) are unaffected.
 

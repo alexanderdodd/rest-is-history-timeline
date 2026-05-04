@@ -34,7 +34,7 @@ export default function FilterPanel({ filters, onChange }: Props) {
           checked={filters.hostsOnly}
           onChange={(e) => onChange({ ...filters, hostsOnly: e.target.checked })}
         />
-        <span>Hosts only</span>
+        <span>Tom and Dominic only (no guests)</span>
       </label>
       <label className="filter-toggle">
         <input
