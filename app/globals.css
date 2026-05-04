@@ -666,17 +666,12 @@ a.ct-cover:hover img { filter: brightness(1.08); }
 .ct-event-meta {
   margin: 0;
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.4rem 0.6rem;
+  align-items: center;
+  gap: 0.5rem;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-}
-.ct-event-meta-pub {
-  color: var(--text-faint);
-  font-weight: 600;
 }
 
 /* Series badge — appears above the episode title when the episode is part

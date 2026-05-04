@@ -23,18 +23,6 @@ function dateRangeLabel(ep: PositionedEpisode): string {
   return `${start} – ${end}`;
 }
 
-const SHORT_MONTHS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
-
-/** Format the YouTube `publishedAt` ISO timestamp as "12 Aug 2024". */
-function publishedDateLabel(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return `${d.getUTCDate()} ${SHORT_MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
-}
-
 function seriesBadgeText(ep: PositionedEpisode): string | null {
   if (!ep.series) return null;
   const { topic, seriesNumber, partNumber, totalParts } = ep.series;
@@ -115,9 +103,6 @@ export default function EpisodeCard({
         </h3>
         <p className="ct-event-meta">
           <span className="ct-event-era">{dateRangeLabel(episode)}</span>
-          <span className="ct-event-meta-pub">
-            Pub {publishedDateLabel(episode.publishedAt)}
-          </span>
         </p>
         {episode.description && (
           <p className="ct-event-desc">{truncate(episode.description, 240)}</p>
