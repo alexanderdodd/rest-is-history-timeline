@@ -28,11 +28,13 @@ function passes(ep: PositionedEpisode, f: Filters): boolean {
   // assumed hosts-only since the show is hosts-only by default.
   if (f.hostsOnly && ep.hostsOnly === false) return false;
   if (f.seriesOnly && !ep.series) return false;
-  // Lexicographic comparison works because both values are ISO-shaped:
-  // ep.publishedAt is "YYYY-MM-DDTHH:MM:SSZ" and f.publishedAfter is
-  // "YYYY-MM-DD". An episode published exactly on the filter date passes
-  // (its T-prefixed time is greater than the bare date string).
-  if (f.publishedAfter && ep.publishedAt < f.publishedAfter) return false;
+  if (f.publishedAfter !== null) {
+    // ep.publishedAt is ISO ("2024-08-12T..."), so the first 4 chars are
+    // the publish year. Inclusive of the threshold year — "2024 or later"
+    // keeps everything published in 2024+.
+    const epYear = Number.parseInt(ep.publishedAt.slice(0, 4), 10);
+    if (Number.isFinite(epYear) && epYear < f.publishedAfter) return false;
+  }
   return true;
 }
 
@@ -97,7 +99,9 @@ export default function TimelineApp({ rows, episodes }: Props) {
           hostsOnly: parsed.hostsOnly === true,
           seriesOnly: parsed.seriesOnly === true,
           publishedAfter:
-            typeof parsed.publishedAfter === "string" && parsed.publishedAfter
+            typeof parsed.publishedAfter === "number" &&
+            Number.isFinite(parsed.publishedAfter) &&
+            parsed.publishedAfter > 0
               ? parsed.publishedAfter
               : null,
         });

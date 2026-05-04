@@ -8,7 +8,7 @@ Three filters, all client-side, all combinable:
 
 - **Tom and Dominic only (no guests)** (checkbox) — hides episodes where a guest features prominently. Pure Tom + Dominic only.
 - **Series only** (checkbox) — hides one-off episodes. Only multi-part series episodes (French Revolution, Caligula, etc.) remain.
-- **Published after** (date input) — hides episodes whose YouTube `publishedAt` is strictly before the selected date. Skips the older episodes when production values were less polished, with no fiddly numeric thresholds.
+- **Published in** (year dropdown — "2024 or later" etc.) — hides episodes whose YouTube `publishedAt` year is strictly before the selected year. Skips the older episodes when production values were less polished. Year-granularity rather than full-date because that's the level people actually think at ("just give me the recent stuff").
 
 Filters are remembered per-browser in `localStorage["trih-timeline-filters"]` so they stick across visits. Clear it (or use a different browser) to reset.
 
@@ -38,8 +38,8 @@ The three are orthogonal and combinable. Setting all three gives you the high-qu
 
 ## Non-obvious decisions / constraints
 
-- **`publishedAfter` uses lexicographic string comparison** rather than `new Date()` parsing. Both values are ISO-shaped (`YYYY-MM-DDTHH:MM:SSZ` for `publishedAt`, `YYYY-MM-DD` for the filter), so `ep.publishedAt < f.publishedAfter` is correct for "published before midnight UTC on the filter date". An episode published exactly on the filter date passes (its T-prefixed time is greater than the bare date string).
-- **An earlier `min episode number` filter was replaced by `publishedAfter`.** The old filter operated on a regex-extracted leading number from the title (e.g. `232. The Loch Ness Monster`) and was strict — also hiding unnumbered episodes when active. It worked but the publish date is the more obvious "filter out the older stuff" lever and applies uniformly across numbered and unnumbered episodes.
+- **`publishedAfter` is just a year integer**, not a full date string. The filter compares against `parseInt(ep.publishedAt.slice(0, 4))` — the first 4 chars of the ISO `publishedAt` — and is inclusive of the threshold ("2024 or later" keeps everything from 2024-01-01 onward). A previous full-date variant (`<input type="date">`) traded precision for ergonomics; people think in years for "give me the recent stuff", and the calendar-picker UI got in the way.
+- **An earlier `min episode number` filter was replaced by `publishedAfter`.** The old filter operated on a regex-extracted leading number from the title (e.g. `232. The Loch Ness Monster`) and was strict — also hiding unnumbered episodes when active. It worked but the publish year is the more obvious "filter out the older stuff" lever and applies uniformly across numbered and unnumbered episodes.
 - **Filter state in localStorage, not URL params.** The site is single-page and the user iterates by reloading; durability matters more than shareability. Switching to `useSearchParams` is a one-liner if we ever need shareable filter URLs.
 - **Hydration-safe initialisation.** `useState(DEFAULT_FILTERS)` then `useEffect` to load saved filters. The brief flash of "all-off" on first paint before the saved state kicks in is acceptable; the alternative (lazy initialiser reading localStorage) breaks hydration.
 - **`hostsOnly: undefined` is treated as `true`.** Episodes classified before v8 don't have the field. Treating missing as "hosts-only" matches the show's default; the alternative (hide them as if guest-flagged) would silently nuke most of the timeline pre-resync.

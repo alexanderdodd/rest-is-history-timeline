@@ -6,15 +6,11 @@ export type Filters = {
   /** Hide episodes that aren't part of a multi-part series. */
   seriesOnly: boolean;
   /**
-   * When set, hide episodes whose YouTube `publishedAt` is strictly before
-   * this date. Stored as a `YYYY-MM-DD` string (the format produced by
-   * `<input type="date">`). Null means "no filter". String comparison
-   * against the ISO `publishedAt` is correct for our purposes — the filter
-   * value has no time component, so `ep.publishedAt < filterValue` is
-   * lexicographically equivalent to "published before midnight UTC on the
-   * filter date".
+   * When set, hide episodes whose YouTube `publishedAt` year is strictly
+   * before this. Inclusive of the year itself: `2024` keeps every episode
+   * published in 2024 or later. Null means "no filter".
    */
-  publishedAfter: string | null;
+  publishedAfter: number | null;
 };
 
 export const DEFAULT_FILTERS: Filters = {
@@ -22,6 +18,17 @@ export const DEFAULT_FILTERS: Filters = {
   seriesOnly: false,
   publishedAfter: null,
 };
+
+/** Years offered in the "Published after" dropdown. The show started late
+ *  2020, so 2020 is the earliest meaningful floor. The upper bound tracks
+ *  the current year. */
+const PUBLISHED_AFTER_FLOOR = 2020;
+function publishedYearOptions(): number[] {
+  const now = new Date().getFullYear();
+  const out: number[] = [];
+  for (let y = now; y >= PUBLISHED_AFTER_FLOOR; y--) out.push(y);
+  return out;
+}
 
 type Props = {
   filters: Filters;
@@ -49,19 +56,26 @@ export default function FilterPanel({ filters, onChange }: Props) {
       </label>
       <label
         className="filter-date"
-        title="Hide episodes published before this date."
+        title="Hide episodes published before this year."
       >
-        <span>Published after</span>
-        <input
-          type="date"
+        <span>Published in</span>
+        <select
           value={filters.publishedAfter ?? ""}
-          onChange={(e) =>
+          onChange={(e) => {
+            const v = e.target.value;
             onChange({
               ...filters,
-              publishedAfter: e.target.value || null,
-            })
-          }
-        />
+              publishedAfter: v === "" ? null : Number.parseInt(v, 10),
+            });
+          }}
+        >
+          <option value="">Any year</option>
+          {publishedYearOptions().map((y) => (
+            <option key={y} value={y}>
+              {y} or later
+            </option>
+          ))}
+        </select>
       </label>
     </div>
   );
