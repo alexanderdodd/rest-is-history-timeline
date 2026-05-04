@@ -97,8 +97,8 @@ export default function Toolbar({
           aria-label="Open search and filters"
         >
           <svg
-            width="16"
-            height="16"
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -110,10 +110,12 @@ export default function Toolbar({
             <circle cx="11" cy="11" r="7" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
-          <span className="toolbar-trigger-label">Search &amp; filter</span>
+          <span className="toolbar-trigger-placeholder">
+            Search episodes or year — try 1789, Napoleon, 44 BC
+          </span>
           {count > 0 && (
             <span className="toolbar-trigger-badge" aria-label={`${count} filters active`}>
-              {count}
+              {count} filter{count === 1 ? "" : "s"}
             </span>
           )}
           <kbd className="toolbar-trigger-kbd" aria-hidden="true">
