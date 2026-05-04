@@ -56,8 +56,11 @@ body {
   border: 0;
 }
 
-/* ── Search bar ─────────────────────────────────────────────────────── */
-.search-bar {
+/* ── Toolbar (search + filters) ─────────────────────────────────────── */
+/* The whole toolbar is one sticky region. Search-bar and filter-panel are
+   styled as panels inside it so they share the blurred background and only
+   the toolbar owns the position: sticky. */
+.toolbar {
   position: sticky;
   top: 0;
   z-index: 20;
@@ -65,7 +68,10 @@ body {
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border);
-  padding: 0.7rem 1rem;
+}
+
+.search-bar {
+  padding: 0.7rem 1rem 0.4rem;
 }
 .search-inner {
   position: relative;
@@ -112,6 +118,61 @@ body {
   border: 1px solid var(--border-strong);
   padding: 0.05rem 0.4rem;
   border-radius: 4px;
+}
+
+/* ── Filter panel (sits inside the toolbar, below the search input) ─── */
+.filter-panel {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 1rem 0.6rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.1rem;
+  align-items: center;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+.filter-toggle,
+.filter-number {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  user-select: none;
+}
+.filter-toggle input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  margin: 0;
+}
+.filter-toggle:hover span,
+.filter-number:hover span {
+  color: var(--text);
+}
+.filter-number input[type="number"] {
+  width: 64px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.18rem 0.4rem;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+  -moz-appearance: textfield;
+}
+.filter-number input[type="number"]::-webkit-outer-spin-button,
+.filter-number input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.filter-number input[type="number"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 .search-results {
   position: absolute;

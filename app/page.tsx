@@ -1,12 +1,6 @@
-import EpisodeCard from "@/components/EpisodeCard";
-import EventMarker from "@/components/EventMarker";
-import ScrollDepthTracker from "@/components/ScrollDepthTracker";
-import SearchBar from "@/components/SearchBar";
-import SeriesConnectors from "@/components/SeriesConnectors";
-import Timeline, { type TimelineItem } from "@/components/Timeline";
+import TimelineApp, { type Row } from "@/components/TimelineApp";
 import { EVENTS } from "@/lib/data/events";
 import type { HistoricalEvent } from "@/lib/data/types";
-import { formatEventDate, formatYearLabel } from "@/lib/dates";
 import {
   loadEpisodeGroupsForTimeline,
   loadEpisodesForTimeline,
@@ -18,14 +12,7 @@ import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 // after a sync, so fresh episodes appear without waiting for the timer.
 export const revalidate = 3600;
 
-type Row =
-  | { kind: "event"; year: number; event: HistoricalEvent }
-  | { kind: "episodes"; year: number; group: EpisodeGroup };
-
-function buildRows(
-  events: HistoricalEvent[],
-  groups: EpisodeGroup[],
-): Row[] {
+function buildRows(events: HistoricalEvent[], groups: EpisodeGroup[]): Row[] {
   const rows: Row[] = [
     ...events.map<Row>((event) => ({ kind: "event", year: event.year, event })),
     ...groups.map<Row>((group) => ({ kind: "episodes", year: group.year, group })),
@@ -40,37 +27,13 @@ function buildRows(
   return rows;
 }
 
-function rowToItem(row: Row): TimelineItem {
-  if (row.kind === "event") {
-    const e = row.event;
-    return {
-      id: `event-${e.id}`,
-      dateLabel: formatEventDate(e.year, e.month, e.day),
-      content: <EventMarker event={e} />,
-      rowClassName: "ct-row-event",
-    };
-  }
-  const compact = row.group.episodes.length > 1;
-  return {
-    id: `year-${row.group.year}`,
-    dateLabel: formatYearLabel(row.group.year),
-    content: (
-      <div className="ct-episode-stack">
-        {row.group.episodes.map((ep) => (
-          <EpisodeCard key={ep.youtubeId} episode={ep} compact={compact} />
-        ))}
-      </div>
-    ),
-  };
-}
-
 export default async function Home() {
   const [episodes, groups] = await Promise.all([
     loadEpisodesForTimeline(),
     loadEpisodeGroupsForTimeline(),
   ]);
 
-  const items = buildRows(EVENTS, groups).map(rowToItem);
+  const rows = buildRows(EVENTS, groups);
 
   const websiteJsonLd = {
     "@context": "https://schema.org",
@@ -126,9 +89,7 @@ export default async function Home() {
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
       />
-      <SearchBar episodes={episodes} />
-      <Timeline items={items} overlay={<SeriesConnectors />} />
-      <ScrollDepthTracker />
+      <TimelineApp rows={rows} episodes={episodes} />
     </main>
   );
 }

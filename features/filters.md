@@ -1,0 +1,47 @@
+# filters
+
+Three opt-in toggles in the docked toolbar that let the user thin out the timeline to the episodes they actually want to browse. Live in the toolbar alongside the search bar; persist across visits via localStorage.
+
+## What it does
+
+Three filters, all client-side, all combinable:
+
+- **Hosts only** (checkbox) — hides episodes where a guest features prominently. Pure Tom + Dominic only.
+- **Series only** (checkbox) — hides one-off episodes. Only multi-part series episodes (French Revolution, Caligula, etc.) remain.
+- **Hide numbered ≤ N** (number input) — hides numbered standalone episodes (titles starting `123. ...`) whose number is at or below N. Episodes WITHOUT a leading number (named series episodes, archive re-uploads) are unaffected.
+
+Filters are remembered per-browser in `localStorage["trih-timeline-filters"]` so they stick across visits. Clear it (or use a different browser) to reset.
+
+When a filter empties out a year row entirely, the row vanishes — no orphan year labels with no cards. SearchBar respects the same filtered set so a result you click is guaranteed to be on the rendered timeline (otherwise `scrollIntoView` would silently fail).
+
+## Why
+
+Browsing the full ~600-episode timeline is overwhelming, and the user has different shapes of "what I want to watch":
+
+- Pure-hosts mode for when you want the show's signature dynamic, not a guest interview.
+- Series-only for "I want to commit to a deep dive arc, not a one-off curiosity".
+- Numbered-threshold for skipping the older, lower-quality early episodes — the show's production values and run-time conventions stabilised somewhere in the low hundreds, so chopping the early numbered standalones is a quality-control shortcut.
+
+The three are orthogonal and combinable. Setting all three gives you the high-quality recent series-only Tom-and-Dominic feed.
+
+## How it works
+
+- **`components/TimelineApp.tsx`** is the top-level client component. Owns filter state via `useState`; renders the toolbar (`<SearchBar />` + `<FilterPanel />`), the `<Timeline />`, and the `<ScrollDepthTracker />`.
+  - On mount, hydrates from `localStorage["trih-timeline-filters"]` via `useEffect`. We deliberately don't initialise from localStorage in `useState` because that would cause a server/client hydration mismatch — server has no localStorage so it always renders DEFAULT_FILTERS, and a client with saved filters would render a different tree.
+  - On every filter change, persists back to localStorage in another `useEffect` (gated on the `hydrated` flag so the first load's setState from localStorage doesn't immediately re-write the same value).
+  - Filters apply to (a) the rows passed to `<Timeline />` and (b) the episodes passed to `<SearchBar />`. A row that has no surviving episodes is dropped entirely; event rows always pass through.
+  - `<SeriesConnectors />` is keyed on a string derived from the filter state, so when filters change it remounts and the SVG paths recompute against the new DOM.
+- **`components/FilterPanel.tsx`** is the controlled UI: three checkbox/number inputs that call `onChange` with the next `Filters` value.
+- **`lib/episodes-loader.ts`** computes `episodeNumber` from the title at load time via a regex (`/^\s*(\d+)\.\s/`). It's deterministic — no need to persist on the index.
+- **`lib/sync/types.ts` + `lib/sync/classify.ts`** populate `hostsOnly` (added in v8). The classifier defaults to `true` when it can't tell, since the show is hosts-only by default. Pre-v8 entries (no `hostsOnly` field) are also treated as `true` by the filter logic (`ep.hostsOnly === false` is the only signal for "guest"; missing means hosts-only).
+- **`app/page.tsx`** stays a server component: loads the index, builds the `Row[]`, and hands both the rows and the flat `PositionedEpisode[]` to `<TimelineApp />`.
+
+## Non-obvious decisions / constraints
+
+- **`min episode number` does NOT hide non-numbered episodes.** Reading the user's stated motive ("get to the quality stuff"), unnumbered series episodes are usually the quality stuff. The filter only hides numbered standalones with `number ≤ N`. If the user wants to hide all standalones, they combine "Hide numbered ≤ 9999" with the rest of the toolset, or use "Series only".
+- **Filter state in localStorage, not URL params.** The site is single-page and the user iterates by reloading; durability matters more than shareability. Switching to `useSearchParams` is a one-liner if we ever need shareable filter URLs.
+- **Hydration-safe initialisation.** `useState(DEFAULT_FILTERS)` then `useEffect` to load saved filters. The brief flash of "all-off" on first paint before the saved state kicks in is acceptable; the alternative (lazy initialiser reading localStorage) breaks hydration.
+- **`hostsOnly: undefined` is treated as `true`.** Episodes classified before v8 don't have the field. Treating missing as "hosts-only" matches the show's default; the alternative (hide them as if guest-flagged) would silently nuke most of the timeline pre-resync.
+- **SearchBar receives the FILTERED set**, not all episodes. This keeps search consistent with what's rendered: a click on a search result will always find a card in the DOM. If the user wants to find a hidden episode, they unfilter first.
+- **Toolbar is one sticky region** (`.toolbar`), with `.search-bar` and `.filter-panel` as plain panels inside it. Each was previously its own sticky element which would have meant juggling top offsets; one sticky parent owns the dock.
+- **Filter changes remount `<SeriesConnectors />` via a `key` prop.** The connectors compute SVG paths from DOM measurement; without the remount they'd retain stale geometry until the next ResizeObserver fire.

@@ -18,6 +18,14 @@ export type PositionedEpisode = ClassifiedEpisode & {
    * midpoint of the first cover range. */
   timelineYear: number;
   /**
+   * The leading episode number on the main numbered feed, e.g. "232" from
+   * "232. The Loch Ness Monster". null for everything else (named series
+   * episodes, ARCHIVE re-uploads, podcast trailers). Powers the "hide early
+   * numbered episodes" filter — early-numbered episodes are the ones the
+   * user might consider lower-quality.
+   */
+  episodeNumber: number | null;
+  /**
    * Stable id grouping this episode with other parts of the SAME production.
    *
    * The classifier emits `(topic, seriesNumber)` based purely on title text,
@@ -57,6 +65,14 @@ export async function loadEpisodeIndex(): Promise<EpisodeIndex | null> {
 function timelinePosition(ep: ClassifiedEpisode): number | null {
   if (ep.covers.length === 0) return null;
   return ep.covers[0].startYear;
+}
+
+/** Extract the leading "232." style episode number from a title, or null. */
+function extractEpisodeNumber(title: string): number | null {
+  const match = title.match(/^\s*(\d+)\.\s/);
+  if (!match) return null;
+  const n = Number.parseInt(match[1], 10);
+  return Number.isFinite(n) ? n : null;
 }
 
 /** Compare-key for a topic — slug-normalised so "The French Revolution"
@@ -122,7 +138,12 @@ export function positionEpisodes(
     const year = timelinePosition(ep);
     if (year === null) continue;
     const productionId = productionIds.get(ep.youtubeId) ?? ep.youtubeId;
-    out.push({ ...ep, timelineYear: year, productionId });
+    out.push({
+      ...ep,
+      timelineYear: year,
+      productionId,
+      episodeNumber: extractEpisodeNumber(ep.title),
+    });
   }
   // Stable secondary sort by publishedAt so co-located episodes from the
   // same series read in publish order.
